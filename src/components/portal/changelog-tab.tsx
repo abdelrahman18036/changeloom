@@ -3,14 +3,17 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   AlertTriangle,
+  Check,
   ChevronLeft,
   ChevronRight,
+  Copy,
   FlaskConical,
   Package,
   Search,
   ShieldAlert,
   TriangleAlert,
 } from "lucide-react";
+import { toast } from "sonner";
 import {
   CATEGORIES,
   CATEGORY_MAP,
@@ -33,21 +36,32 @@ export function ChangelogTab({ result }: { result: ChangelogResult }) {
   const [q, setQ] = useState("");
   const [audience, setAudience] = useState<Audience>("all");
   const [cats, setCats] = useState<Set<CategoryKey>>(new Set());
+  const [author, setAuthor] = useState("");
+  const [hideDeps, setHideDeps] = useState(false);
   const [page, setPage] = useState(0);
   const searchRef = useRef<HTMLInputElement>(null);
+
+  const authors = useMemo(() => {
+    const set = new Set<string>();
+    for (const e of all) if (e.author) set.add(e.author);
+    return [...set].sort();
+  }, [all]);
+  const depCount = useMemo(() => all.filter((e) => e.isDependency).length, [all]);
 
   const filtered = useMemo(() => {
     const needle = q.trim().toLowerCase();
     return all.filter((e) => {
       if (audience !== "all" && e.audience !== audience) return false;
       if (cats.size > 0 && !cats.has(e.category)) return false;
+      if (author && e.author !== author) return false;
+      if (hideDeps && e.isDependency) return false;
       if (needle) {
         const hay = `${e.text} ${e.scope ?? ""} ${e.author ?? ""}`.toLowerCase();
         if (!hay.includes(needle)) return false;
       }
       return true;
     });
-  }, [all, q, audience, cats]);
+  }, [all, q, audience, cats, author, hideDeps]);
 
   const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const clampedPage = Math.min(page, pageCount - 1);
@@ -56,7 +70,7 @@ export function ChangelogTab({ result }: { result: ChangelogResult }) {
     clampedPage * PAGE_SIZE + PAGE_SIZE,
   );
 
-  useEffect(() => setPage(0), [q, audience, cats]);
+  useEffect(() => setPage(0), [q, audience, cats, author, hideDeps]);
 
   // Keyboard: `/` focus search, `[` `]` paginate.
   useEffect(() => {
@@ -157,8 +171,24 @@ export function ChangelogTab({ result }: { result: ChangelogResult }) {
               className="h-9 w-full rounded-lg border bg-panel pl-9 pr-3 text-sm outline-none placeholder:text-muted-foreground/70 focus-visible:border-primary/50"
             />
           </div>
-          <div className="inline-flex rounded-lg border bg-panel p-0.5 text-xs font-medium">
-            {(["all", "ship", "plumbing"] as Audience[]).map((a) => (
+          <div className="flex items-center gap-2">
+            {authors.length > 1 && (
+              <select
+                value={author}
+                onChange={(e) => setAuthor(e.target.value)}
+                aria-label="Filter by author"
+                className="h-9 max-w-[10rem] rounded-lg border bg-panel px-2.5 font-mono text-xs text-foreground/90 outline-none focus-visible:border-primary/50"
+              >
+                <option value="">All authors</option>
+                {authors.map((a) => (
+                  <option key={a} value={a}>
+                    {a}
+                  </option>
+                ))}
+              </select>
+            )}
+            <div className="inline-flex rounded-lg border bg-panel p-0.5 text-xs font-medium">
+              {(["all", "ship", "plumbing"] as Audience[]).map((a) => (
               <button
                 key={a}
                 onClick={() => setAudience(a)}
@@ -172,11 +202,12 @@ export function ChangelogTab({ result }: { result: ChangelogResult }) {
               >
                 {a === "all" ? "All" : a === "ship" ? "Affects you" : "Under the hood"}
               </button>
-            ))}
+              ))}
+            </div>
           </div>
         </div>
 
-        <div className="flex flex-wrap gap-1.5">
+        <div className="flex flex-wrap items-center gap-1.5">
           {presentCats.map((c) => {
             const active = cats.has(c.key);
             return (
@@ -211,6 +242,21 @@ export function ChangelogTab({ result }: { result: ChangelogResult }) {
               </button>
             );
           })}
+          {depCount > 0 && (
+            <button
+              onClick={() => setHideDeps((h) => !h)}
+              aria-pressed={hideDeps}
+              className={cn(
+                "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs transition-colors",
+                hideDeps
+                  ? "border-primary/40 bg-primary/10 text-primary"
+                  : "border-border/70 text-muted-foreground hover:text-foreground",
+              )}
+            >
+              <Package className="size-3" />
+              {hideDeps ? "deps hidden" : `hide ${depCount} deps`}
+            </button>
+          )}
         </div>
       </div>
 
@@ -296,14 +342,29 @@ function ChangelogRow({
   repo: string;
   last: boolean;
 }) {
+  const [copied, setCopied] = useState(false);
   const repoUrl = `https://github.com/${repo}`;
   const href = entry.prNumber
     ? `${repoUrl}/pull/${entry.prNumber}`
     : `${repoUrl}/commit/${entry.sha}`;
+  const ref = entry.prNumber ? `#${entry.prNumber}` : entry.shortSha;
+
+  async function copyEntry() {
+    const line = `- ${entry.scope ? `${entry.scope}: ` : ""}${entry.text} (${ref})`;
+    try {
+      await navigator.clipboard.writeText(line);
+      setCopied(true);
+      toast.success("Entry copied");
+      setTimeout(() => setCopied(false), 1400);
+    } catch {
+      toast.error("Clipboard blocked");
+    }
+  }
+
   return (
     <li
       className={cn(
-        "flex items-stretch gap-3 px-3 py-2.5 transition-colors hover:bg-secondary/40",
+        "group flex items-stretch gap-3 px-3 py-2.5 transition-colors hover:bg-secondary/40",
         !last && "border-b border-border/60",
       )}
     >
@@ -316,9 +377,23 @@ function ChangelogRow({
             </span>
           )}
           {entry.text}
+          {entry.isSecurity && (
+            <ShieldAlert className="ml-1.5 inline size-3 align-[-1px] text-cat-fix" />
+          )}
         </span>
       </div>
       <div className="flex shrink-0 items-center gap-2 self-center">
+        <button
+          onClick={copyEntry}
+          aria-label="Copy entry"
+          className="opacity-0 transition-opacity hover:text-primary focus-visible:opacity-100 group-hover:opacity-100"
+        >
+          {copied ? (
+            <Check className="size-3.5 text-primary" />
+          ) : (
+            <Copy className="size-3.5 text-muted-foreground" />
+          )}
+        </button>
         {entry.author && (
           <span className="hidden font-mono text-xs text-muted-foreground/70 sm:inline">
             {entry.author}
@@ -330,7 +405,7 @@ function ChangelogRow({
           rel="noreferrer"
           className="font-mono text-xs text-muted-foreground transition-colors hover:text-primary"
         >
-          {entry.prNumber ? `#${entry.prNumber}` : entry.shortSha}
+          {ref}
         </a>
       </div>
     </li>

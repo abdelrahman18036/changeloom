@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import {
   Activity,
+  Fingerprint,
   Gauge,
   GitCommitHorizontal,
   Loader2,
@@ -12,6 +13,8 @@ import {
 import type { ChangelogResult } from "@/lib/changelog/types";
 import type { CadenceInsights } from "@/lib/changelog/insights";
 import { CadenceRibbon } from "@/components/loom/cadence-ribbon";
+import { VelocityChart } from "@/components/loom/velocity-chart";
+import { ReleaseShape } from "@/components/loom/release-shape";
 import { LoomScoreGauge } from "@/components/loom/loom-score-gauge";
 import { DistributionBar } from "@/components/loom/distribution-bar";
 import { ChurnBars } from "@/components/loom/churn-bars";
@@ -101,6 +104,9 @@ export function InsightsTab({
             <p className="font-mono text-[11px] text-muted-foreground/70">
               denser weave = more frequent releases
             </p>
+            <div className="border-t border-border/60 pt-4">
+              <VelocityChart points={cadence.points} />
+            </div>
           </div>
         )}
         </div>
@@ -128,6 +134,17 @@ export function InsightsTab({
             </p>
           </div>
         )}
+      </Panel>
+
+      {/* Release shape */}
+      <Panel>
+        <PanelHeader icon={Fingerprint} title="Shape of the release" hint="category fingerprint" />
+        <div className="flex justify-center py-2">
+          <ReleaseShape distribution={result.distribution} />
+        </div>
+        <p className="text-center font-mono text-[11px] text-muted-foreground/70">
+          every release has a silhouette
+        </p>
       </Panel>
 
       {/* Churn */}

@@ -27,7 +27,7 @@ can't show you in one place.
 
 ## Features
 
-Paste a repo — or just open `changeloom.dev/owner/repo` — and land in a
+Paste a repo — or just open `changeloom.vercel.app/owner/repo` — and land in a
 portal with five views:
 
 - **Changelog** — entries categorized (breaking / feature / fix / perf / docs /
@@ -52,7 +52,7 @@ portal with five views:
   to the portal:
 
   ```md
-  [![changelog](https://changeloom.dev/api/badge/owner/repo)](https://changeloom.dev/owner/repo)
+  [![changelog](https://changeloom.vercel.app/api/badge/owner/repo)](https://changeloom.vercel.app/owner/repo)
   ```
 
 - **Staging Dock** — one click to preview *everything unreleased* on the default
@@ -104,7 +104,7 @@ GITHUB_TOKEN=ghp_xxx
 
 ## API
 
-The portal is backed by three endpoints:
+The portal is backed by a small set of endpoints:
 
 | Endpoint | Purpose |
 |---|---|
@@ -117,7 +117,7 @@ The portal is backed by three endpoints:
 | `GET /api/og/owner/repo` | Dynamic 1200×630 social share card |
 
 ```bash
-curl "https://changeloom.dev/api/changelog?repo=honojs/hono&format=md"
+curl "https://changeloom.vercel.app/api/changelog?repo=honojs/hono&format=md"
 ```
 
 ## Rate limits
@@ -135,3 +135,8 @@ Commits — its own history is a Changeloom demo.
 ## License
 
 [MIT](LICENSE).
+
+---
+
+Created by [abdorange](https://www.abdorange.me/) · live at
+[changeloom.vercel.app](https://changeloom.vercel.app)

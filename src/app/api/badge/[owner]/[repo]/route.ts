@@ -51,7 +51,7 @@ function badgeSvg(right: string, rightColor: string): string {
 
 /**
  * Embeddable changelog badge:
- *   [![changelog](https://changeloom.dev/api/badge/owner/repo)](https://changeloom.dev/owner/repo)
+ *   [![changelog](https://changeloom.vercel.app/api/badge/owner/repo)](https://changeloom.vercel.app/owner/repo)
  * Shows the repo's Loom Score (changelog-hygiene grade) for its latest range.
  */
 export async function GET(
