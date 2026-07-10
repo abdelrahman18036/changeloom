@@ -6,6 +6,7 @@ import {
   AlertCircle,
   ArrowRight,
   BadgeCheck,
+  Check,
   ExternalLink,
   FlaskConical,
   Gauge,
@@ -13,11 +14,14 @@ import {
   Loader2,
   Lock,
   ShieldCheck,
+  Trash2,
 } from "lucide-react";
+import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { LiveBackdrop } from "@/components/loom/live-backdrop";
 import { HeroShowcase } from "@/components/app/hero-showcase";
 import { isValidRepo, normalizeRepoInput } from "@/lib/changelog/categorize";
+import { clearToken, loadToken, saveToken } from "@/lib/token-storage";
 import { cn } from "@/lib/utils";
 
 const EXAMPLES = ["honojs/hono", "vercel/next.js", "colinhacks/zod", "facebook/react"];
@@ -56,14 +60,60 @@ export function Hero({
   error?: string | null;
 }) {
   const [showToken, setShowToken] = useState(false);
+  const [checking, setChecking] = useState(false);
+  const [saved, setSaved] = useState<{ token: string; login: string } | null>(null);
 
   // A private-repo error upstream asks us to reveal the token field.
   useEffect(() => {
     if (openToken) setShowToken(true);
   }, [openToken]);
 
+  // Reflect a token saved on a previous visit.
+  useEffect(() => {
+    const s = loadToken();
+    if (s) setSaved(s);
+  }, []);
+
   const trimmed = value.trim();
   const valid = trimmed === "" ? null : isValidRepo(trimmed);
+  const tokenSavedNow = saved !== null && saved.token === token;
+
+  async function saveAndTest() {
+    if (!token.trim()) return;
+    setChecking(true);
+    try {
+      const res = await fetch("/api/token/check", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token }),
+      });
+      const data = await res.json();
+      if (data.valid) {
+        saveToken(token, data.login);
+        setSaved({ token, login: data.login });
+        toast.success(`Signed in as @${data.login} — token saved in this browser`, {
+          description: `${Number(data.remaining).toLocaleString()} of ${Number(data.limit).toLocaleString()} requests left this hour.`,
+        });
+      } else {
+        toast.error(
+          data.reason === "unauthorized"
+            ? "That token isn't valid or was revoked."
+            : "Couldn't validate the token — try again.",
+        );
+      }
+    } catch {
+      toast.error("Network error while validating the token.");
+    } finally {
+      setChecking(false);
+    }
+  }
+
+  function removeToken() {
+    clearToken();
+    onToken("");
+    setSaved(null);
+    toast("Token removed from this browser");
+  }
 
   return (
     <section className="relative isolate overflow-hidden">
@@ -240,12 +290,15 @@ export function Hero({
                 <div className="mx-auto mt-4 max-w-md rounded-xl border bg-panel p-4 text-left">
                   <div className="mb-2 flex items-center gap-2">
                     <Lock className="size-4 text-primary" />
-                    <span className="text-sm font-medium">Access a private repo</span>
+                    <span className="text-sm font-medium">
+                      Access a private repo · raise your rate limit
+                    </span>
                   </div>
                   <p className="mb-3 text-xs leading-relaxed text-muted-foreground">
-                    Paste a GitHub personal access token. It&apos;s kept in your
-                    browser and sent only with your request — never stored. No
-                    scopes are needed for public repos; use the{" "}
+                    Paste a GitHub token to test and save it in this browser
+                    (localStorage) — it&apos;s sent only with your requests and
+                    never leaves your machine otherwise. No scopes needed for
+                    public repos; use the{" "}
                     <span className="font-mono text-foreground/80">repo</span> scope
                     for private ones.
                   </p>
@@ -258,14 +311,44 @@ export function Hero({
                     autoComplete="off"
                     className="h-9 font-mono text-xs"
                   />
-                  <a
-                    href="https://github.com/settings/tokens/new?description=Changeloom&scopes=repo"
-                    target="_blank"
-                    rel="noreferrer"
-                    className="mt-2 inline-flex items-center gap-1 text-xs text-primary hover:underline"
-                  >
-                    Create a token <ExternalLink className="size-3" />
-                  </a>
+                  <div className="mt-2.5 flex flex-wrap items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={saveAndTest}
+                      disabled={checking || !token.trim() || tokenSavedNow}
+                      className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-primary px-3 text-xs font-medium text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-50"
+                    >
+                      {checking ? (
+                        <Loader2 className="size-3.5 animate-spin" />
+                      ) : tokenSavedNow ? (
+                        <Check className="size-3.5" />
+                      ) : null}
+                      {checking ? "Testing…" : tokenSavedNow ? "Saved" : "Save & test"}
+                    </button>
+                    {saved && (
+                      <button
+                        type="button"
+                        onClick={removeToken}
+                        className="inline-flex h-8 items-center gap-1.5 rounded-lg border px-3 text-xs text-muted-foreground transition-colors hover:text-foreground"
+                      >
+                        <Trash2 className="size-3.5" /> Remove
+                      </button>
+                    )}
+                    <a
+                      href="https://github.com/settings/tokens/new?description=Changeloom&scopes=repo"
+                      target="_blank"
+                      rel="noreferrer"
+                      className="ml-auto inline-flex items-center gap-1 text-xs text-primary hover:underline"
+                    >
+                      Create a token <ExternalLink className="size-3" />
+                    </a>
+                  </div>
+                  {tokenSavedNow && saved && (
+                    <p className="mt-2.5 inline-flex items-center gap-1.5 text-xs text-primary">
+                      <Check className="size-3.5" /> Saved in this browser as @
+                      {saved.login} — used automatically.
+                    </p>
+                  )}
                 </div>
               </motion.div>
             )}

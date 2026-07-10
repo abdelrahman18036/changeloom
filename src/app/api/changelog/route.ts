@@ -53,7 +53,7 @@ export async function POST(request: Request) {
   } catch (err) {
     if (err instanceof GitHubError) {
       return NextResponse.json(
-        { error: err.message, reason: err.reason },
+        { error: err.message, reason: err.reason, retryAt: err.retryAt },
         { status: err.status >= 400 && err.status < 600 ? err.status : 502 },
       );
     }
@@ -117,7 +117,7 @@ export async function GET(request: Request) {
   } catch (err) {
     if (err instanceof GitHubError) {
       return NextResponse.json(
-        { error: err.message, reason: err.reason },
+        { error: err.message, reason: err.reason, retryAt: err.retryAt },
         { status: err.status >= 400 && err.status < 600 ? err.status : 502 },
       );
     }

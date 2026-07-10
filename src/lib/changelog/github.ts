@@ -4,12 +4,20 @@ export class GitHubError extends Error {
   status: number;
   /** Machine-readable reason so the UI can render the right message. */
   reason: "not_found" | "rate_limit" | "bad_token" | "no_commits" | "unknown";
+  /** ISO time the rate limit resets, when known (reason === "rate_limit"). */
+  retryAt?: string;
 
-  constructor(status: number, reason: GitHubError["reason"], message: string) {
+  constructor(
+    status: number,
+    reason: GitHubError["reason"],
+    message: string,
+    retryAt?: string,
+  ) {
     super(message);
     this.name = "GitHubError";
     this.status = status;
     this.reason = reason;
+    this.retryAt = retryAt;
   }
 }
 
@@ -96,10 +104,15 @@ async function gh<T>(path: string, token?: string): Promise<T> {
   if (res.status === 403 || res.status === 429) {
     const remaining = res.headers.get("x-ratelimit-remaining");
     if (remaining === "0") {
+      const reset = res.headers.get("x-ratelimit-reset");
+      const retryAt = reset
+        ? new Date(Number(reset) * 1000).toISOString()
+        : undefined;
       throw new GitHubError(
         403,
         "rate_limit",
-        "GitHub API rate limit reached. Add a personal access token to raise the limit.",
+        "GitHub's API rate limit is reached. Add a personal access token for 5,000 requests/hour.",
+        retryAt,
       );
     }
     throw new GitHubError(403, "unknown", "GitHub denied the request.");
