@@ -31,6 +31,8 @@ export interface ChangelogEntry {
   isSecurity: boolean;
   /** Flagged as a dependency bump (bot author or bump pattern). */
   isDependency: boolean;
+  /** Commit author date (ISO), when available. */
+  date: string | null;
 }
 
 export interface ChangelogGroup {
@@ -50,6 +52,7 @@ export interface RepoVitals {
   license: string | null;
   pushedAt: string;
   defaultBranch: string;
+  isPrivate: boolean;
 }
 
 export interface RangeContributor {

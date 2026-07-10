@@ -46,6 +46,7 @@ export interface GitHubRepoMeta {
   html_url: string;
   homepage: string | null;
   pushed_at: string;
+  private: boolean;
   license: { spdx_id: string | null; name: string } | null;
 }
 

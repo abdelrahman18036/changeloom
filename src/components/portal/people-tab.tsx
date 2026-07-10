@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Users } from "lucide-react";
+import { FolderGit2, Users } from "lucide-react";
 import type { ChangelogResult } from "@/lib/changelog/types";
 import { CATEGORY_MAP, type CategoryKey } from "@/lib/changelog/categories";
 import { ContributorWarp } from "@/components/loom/contributor-warp";
@@ -25,6 +25,29 @@ export function PeopleTab({ result }: { result: ChangelogResult }) {
       }
     }
     return map;
+  }, [result.groups]);
+
+  // Who owns each area (conventional-commit scope) in this range.
+  const areaOwners = useMemo(() => {
+    const scopes = new Map<string, Map<string, number>>();
+    for (const g of result.groups) {
+      for (const e of g.entries) {
+        if (!e.scope || !e.author) continue;
+        const m = scopes.get(e.scope) ?? new Map<string, number>();
+        m.set(e.author, (m.get(e.author) ?? 0) + 1);
+        scopes.set(e.scope, m);
+      }
+    }
+    return [...scopes.entries()]
+      .map(([scope, authors]) => {
+        const total = [...authors.values()].reduce((n, v) => n + v, 0);
+        const [owner, count] = [...authors.entries()].sort(
+          (a, b) => b[1] - a[1],
+        )[0];
+        return { scope, owner, count, total, share: count / total };
+      })
+      .sort((a, b) => b.total - a.total)
+      .slice(0, 8);
   }, [result.groups]);
   const shown = expanded ? contributors : contributors.slice(0, INITIAL);
   const top = contributors[0];
@@ -131,6 +154,41 @@ export function PeopleTab({ result }: { result: ChangelogResult }) {
         Each bar shows <span className="text-foreground/80">what that person built</span>,
         by category — not just how much.
       </p>
+
+      {areaOwners.length > 0 && (
+        <Panel>
+          <PanelHeader icon={FolderGit2} title="Area ownership" hint="by scope" />
+          <ul className="space-y-2.5">
+            {areaOwners.map((a) => (
+              <li key={a.scope} className="flex items-center gap-3 text-sm">
+                <span className="w-28 shrink-0 truncate font-mono text-xs text-primary">
+                  {a.scope}
+                </span>
+                <a
+                  href={`https://github.com/${a.owner}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="font-mono text-xs text-foreground/80 hover:text-primary"
+                >
+                  {a.owner}
+                </a>
+                <div className="hidden h-1.5 flex-1 overflow-hidden rounded-full bg-secondary sm:block">
+                  <div
+                    className="h-full rounded-full bg-primary"
+                    style={{ width: `${Math.max(6, Math.round(a.share * 100))}%` }}
+                  />
+                </div>
+                <span className="shrink-0 font-mono text-xs tabular-nums text-muted-foreground">
+                  {Math.round(a.share * 100)}%
+                </span>
+              </li>
+            ))}
+          </ul>
+          <p className="mt-3 text-xs text-muted-foreground">
+            The dominant author per area — useful for reviews and bus-factor.
+          </p>
+        </Panel>
+      )}
     </div>
   );
 }

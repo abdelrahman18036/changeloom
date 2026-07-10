@@ -238,6 +238,7 @@ export function categorizeCommit(commit: RawCommit): ChangelogEntry {
     breakingNote,
     isSecurity: detectSecurity(commit.message),
     isDependency: detectDependency(commit.message, commit.authorLogin),
+    date: commit.date,
   };
 }
 
