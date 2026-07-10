@@ -14,6 +14,7 @@ interface Body {
   token?: string;
   base?: string;
   head?: string;
+  staging?: boolean;
 }
 
 export async function POST(request: Request) {
@@ -44,6 +45,7 @@ export async function POST(request: Request) {
       token,
       base: body.base?.trim() || undefined,
       head: body.head?.trim() || undefined,
+      staging: body.staging === true,
     });
     return NextResponse.json(result, {
       headers: { "Cache-Control": "no-store" },

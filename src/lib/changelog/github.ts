@@ -44,6 +44,7 @@ export interface GitHubRepoMeta {
 export interface GitHubRelease {
   tag_name: string;
   name: string | null;
+  body: string | null;
   published_at: string | null;
   created_at: string;
   prerelease: boolean;

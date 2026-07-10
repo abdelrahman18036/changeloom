@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react";
 import { motion } from "motion/react";
-import { Activity, Download, RotateCcw, ScrollText, Users } from "lucide-react";
+import { Activity, Download, FlaskConical, RotateCcw, ScrollText, Users } from "lucide-react";
 import type { ChangelogResult } from "@/lib/changelog/types";
 import { VitalSigns } from "@/components/portal/vital-signs";
 import { RangeSelector } from "@/components/portal/range-selector";
@@ -26,12 +26,14 @@ export function Portal({
   token,
   pending,
   onCompare,
+  onStaging,
   onReset,
 }: {
   result: ChangelogResult;
   token: string;
   pending: boolean;
   onCompare: (base: string, head: string) => void;
+  onStaging: () => void;
   onReset: () => void;
 }) {
   const [tab, setTab] = useState<TabId>("changelog");
@@ -55,12 +57,22 @@ export function Portal({
             pending={pending}
             onCompare={onCompare}
           />
-          <button
-            onClick={onReset}
-            className="inline-flex items-center gap-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground"
-          >
-            <RotateCcw className="size-3.5" /> New repo
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={onStaging}
+              disabled={pending || result.staging}
+              title="Everything on the default branch not yet released"
+              className="inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/10 px-2.5 py-1 text-xs text-primary transition-colors hover:bg-primary/15 disabled:opacity-50"
+            >
+              <FlaskConical className="size-3.5" /> Unreleased
+            </button>
+            <button
+              onClick={onReset}
+              className="inline-flex items-center gap-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground"
+            >
+              <RotateCcw className="size-3.5" /> New repo
+            </button>
+          </div>
         </div>
       </div>
 

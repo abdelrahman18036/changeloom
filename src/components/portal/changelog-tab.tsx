@@ -5,7 +5,10 @@ import {
   AlertTriangle,
   ChevronLeft,
   ChevronRight,
+  FlaskConical,
+  Package,
   Search,
+  ShieldAlert,
   TriangleAlert,
 } from "lucide-react";
 import {
@@ -95,7 +98,24 @@ export function ChangelogTab({ result }: { result: ChangelogResult }) {
 
   return (
     <div className="space-y-6">
+      {result.staging && (
+        <div className="flex items-start gap-2.5 rounded-lg border border-primary/30 bg-primary/10 p-3 text-sm">
+          <FlaskConical className="mt-0.5 size-4 shrink-0 text-primary" />
+          <p className="text-muted-foreground">
+            <strong className="text-foreground">Unreleased preview</strong> —
+            everything on{" "}
+            <span className="font-mono text-foreground">{result.head}</span> since{" "}
+            <span className="font-mono text-foreground">{result.base}</span>. This
+            is what your next release would contain.
+          </p>
+        </div>
+      )}
+
       <TldrStrip result={result} />
+
+      {result.security.length > 0 && (
+        <SecurityCallout entries={result.security} repo={result.repo} />
+      )}
 
       {result.truncated && (
         <div className="flex items-start gap-2.5 rounded-lg border border-cat-fix/30 bg-cat-fix/10 p-3 text-sm">
@@ -362,6 +382,47 @@ function BreakingCallout({
   );
 }
 
+function SecurityCallout({
+  entries,
+  repo,
+}: {
+  entries: ChangelogEntry[];
+  repo: string;
+}) {
+  const repoUrl = `https://github.com/${repo}`;
+  return (
+    <div className="rounded-xl border border-cat-fix/40 bg-cat-fix/[0.08] p-4">
+      <div className="mb-3 flex items-center gap-2">
+        <ShieldAlert className="size-4 text-cat-fix" />
+        <h3 className="text-sm font-semibold text-cat-fix">
+          {entries.length} security fix{entries.length > 1 ? "es" : ""} — patch
+          soon
+        </h3>
+      </div>
+      <ul className="space-y-2">
+        {entries.map((e) => (
+          <li key={e.sha} className="flex items-start gap-2 text-sm">
+            <span className="mt-1.5 size-1.5 shrink-0 rounded-full bg-cat-fix" />
+            <span className="min-w-0 flex-1 break-words text-foreground/90">
+              {e.text}
+            </span>
+            <a
+              href={
+                e.prNumber ? `${repoUrl}/pull/${e.prNumber}` : `${repoUrl}/commit/${e.sha}`
+              }
+              target="_blank"
+              rel="noreferrer"
+              className="shrink-0 font-mono text-xs text-muted-foreground hover:text-cat-fix"
+            >
+              {e.prNumber ? `#${e.prNumber}` : e.shortSha}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 function TldrStrip({ result }: { result: ChangelogResult }) {
   const t = result.tldr;
   const bumpColor =
@@ -378,6 +439,27 @@ function TldrStrip({ result }: { result: ChangelogResult }) {
   ];
   return (
     <div className="rounded-xl border bg-panel p-4">
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <FlaskConical className="size-3.5 text-primary" />
+          <span className="text-xs text-muted-foreground">codename</span>
+          <span className="font-display text-base italic text-primary">
+            {result.codename}
+          </span>
+        </div>
+        <div className="flex items-center gap-2">
+          {result.security.length > 0 && (
+            <span className="inline-flex items-center gap-1 rounded-md bg-cat-fix/15 px-2 py-0.5 text-xs text-cat-fix">
+              <ShieldAlert className="size-3" /> {result.security.length} security
+            </span>
+          )}
+          {result.dependencyUpdates > 0 && (
+            <span className="inline-flex items-center gap-1 rounded-md bg-secondary px-2 py-0.5 text-xs text-muted-foreground">
+              <Package className="size-3" /> {result.dependencyUpdates} deps
+            </span>
+          )}
+        </div>
+      </div>
       <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
         {stats.map((s) => (
           <div key={s.label} className="flex items-baseline gap-1.5">

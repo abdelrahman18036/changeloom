@@ -74,6 +74,48 @@ function heuristicCategory(subject: string): CategoryKey | null {
   return hit?.category ?? null;
 }
 
+const SECURITY_RE =
+  /\b(CVE-\d{4}-\d+|GHSA-[\w-]+|security\s+(fix|patch|issue|advisor)|vulnerab|\bvuln\b|\bexploit\b|\bXSS\b|\bCSRF\b|\bSSRF\b|\bRCE\b|injection|sanitiz|auth(entication)?\s+bypass|prototype\s+pollution|ReDoS|arbitrary\s+(code|file))\b/i;
+
+export function detectSecurity(message: string): boolean {
+  return SECURITY_RE.test(message);
+}
+
+const DEP_RE =
+  /\b(bump|upgrade|update|downgrade)\b.*\b(from|to)\b\s*v?\d|\b(dependenc|lockfile|package\.json|yarn\.lock|pnpm-lock|Cargo\.lock|go\.mod)\b/i;
+
+export function detectDependency(message: string, author: string | null): boolean {
+  if (author && /(dependabot|renovate|greenkeeper|snyk-bot)/i.test(author)) return true;
+  return DEP_RE.test(message.split("\n")[0]);
+}
+
+/** Deterministic release codename from the range's dominant category + a seed. */
+const CODENAME_ADJ: Record<string, string[]> = {
+  breaking: ["Seismic", "Tectonic", "Rift", "Fracture"],
+  feature: ["Luminous", "Radiant", "Kinetic", "Nova"],
+  fix: ["Steadfast", "Tempered", "Anchored", "Resolute"],
+  perf: ["Swift", "Velocity", "Turbine", "Fleet"],
+  docs: ["Lucid", "Clarion", "Verbose", "Codex"],
+  other: ["Woven", "Quiet", "Drift", "Loom"],
+};
+const CODENAME_NOUN = [
+  "Loom", "Weave", "Shuttle", "Thread", "Warp", "Selvedge", "Reed", "Bobbin",
+  "Heddle", "Spindle", "Tapestry", "Filament",
+];
+
+export function releaseCodename(
+  dominantCategory: string,
+  seed: string,
+): string {
+  const adjs = CODENAME_ADJ[dominantCategory] ?? CODENAME_ADJ.other;
+  let h = 0;
+  for (let i = 0; i < seed.length; i++) h = (h * 31 + seed.charCodeAt(i)) >>> 0;
+  const adj = adjs[h % adjs.length];
+  // Unsigned shift — a signed `>>` can go negative for large hashes.
+  const noun = CODENAME_NOUN[(h >>> 3) % CODENAME_NOUN.length];
+  return `${adj} ${noun}`;
+}
+
 /** Parse `owner` and `name` out of a variety of GitHub URL shapes. */
 export function parseRepoUrl(
   input: string,
@@ -179,6 +221,8 @@ export function categorizeCommit(commit: RawCommit): ChangelogEntry {
     author: commit.authorLogin,
     avatarUrl: commit.avatarUrl,
     breakingNote,
+    isSecurity: detectSecurity(commit.message),
+    isDependency: detectDependency(commit.message, commit.authorLogin),
   };
 }
 

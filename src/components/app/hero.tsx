@@ -4,26 +4,11 @@ import { useState } from "react";
 import { motion } from "motion/react";
 import { ArrowRight, BadgeCheck, GitCompareArrows, Gauge, KeyRound, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { WarpField } from "@/components/loom/warp-field";
-import { ReleaseRibbon, type RibbonPoint } from "@/components/loom/release-ribbon";
+import { LiveBackdrop } from "@/components/loom/live-backdrop";
+import { HeroShowcase } from "@/components/app/hero-showcase";
 import { cn } from "@/lib/utils";
 
 const EXAMPLES = ["honojs/hono", "vercel/next.js", "colinhacks/zod", "facebook/react"];
-
-const DEMO: RibbonPoint[] = [
-  { label: "v1.0", value: 9 },
-  { label: "v1.1", value: 15 },
-  { label: "v1.2", value: 6 },
-  { label: "v1.3", value: 23 },
-  { label: "v2.0-rc", value: 12, prerelease: true },
-  { label: "v2.0", value: 31 },
-  { label: "v2.1", value: 14 },
-  { label: "v2.2", value: 20 },
-  { label: "v2.3", value: 9 },
-  { label: "v3.0", value: 27 },
-  { label: "v3.1", value: 17 },
-  { label: "v3.2", value: 24 },
-];
 
 const stage = {
   hidden: {},
@@ -63,11 +48,8 @@ export function Hero({
 
   return (
     <section className="relative isolate overflow-hidden">
-      {/* Loom-stage back-planes */}
-      <div aria-hidden className="pointer-events-none absolute inset-0 -z-20 opacity-60">
-        <WarpField />
-      </div>
-      <div aria-hidden className="weave-field pointer-events-none absolute inset-0 -z-10" />
+      {/* Live loom-stage backdrop */}
+      <LiveBackdrop className="-z-20" />
       <div aria-hidden className="weave-grid pointer-events-none absolute inset-0 -z-10" />
 
       <motion.div
@@ -215,15 +197,9 @@ export function Hero({
           )}
         </motion.form>
 
-        {/* The living ribbon — full-width landscape with the shuttle in flight */}
-        <motion.div variants={rise} className="mt-14 w-full text-foreground">
-          <div className="pane relative overflow-hidden rounded-2xl p-5 sm:p-6">
-            <div className="mb-2 flex items-center justify-between font-mono text-[11px] text-muted-foreground/80">
-              <span>release ribbon</span>
-              <span>node = release · post = commits shipped</span>
-            </div>
-            <ReleaseRibbon points={DEMO} height={170} traveler />
-          </div>
+        {/* The living, self-playing showcase */}
+        <motion.div variants={rise} className="mt-14 w-full max-w-2xl">
+          <HeroShowcase />
         </motion.div>
 
         {/* Feature ticker */}
