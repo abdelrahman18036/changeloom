@@ -1,8 +1,20 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion } from "motion/react";
-import { Activity, Download, FlaskConical, RotateCcw, ScrollText, Users } from "lucide-react";
+import { toast } from "sonner";
+import {
+  Activity,
+  Command as CommandIcon,
+  Copy,
+  Download,
+  ExternalLink,
+  FlaskConical,
+  Link2,
+  RotateCcw,
+  ScrollText,
+  Users,
+} from "lucide-react";
 import type { ChangelogResult } from "@/lib/changelog/types";
 import { VitalSigns } from "@/components/portal/vital-signs";
 import { RangeSelector } from "@/components/portal/range-selector";
@@ -10,6 +22,10 @@ import { ChangelogTab } from "@/components/portal/changelog-tab";
 import { InsightsTab } from "@/components/portal/insights-tab";
 import { PeopleTab } from "@/components/portal/people-tab";
 import { ExportTab } from "@/components/portal/export-tab";
+import {
+  CommandPalette,
+  type Command,
+} from "@/components/portal/command-palette";
 import { cn } from "@/lib/utils";
 
 type TabId = "changelog" | "insights" | "people" | "export";
@@ -37,7 +53,76 @@ export function Portal({
   onReset: () => void;
 }) {
   const [tab, setTab] = useState<TabId>("changelog");
+  const [paletteOpen, setPaletteOpen] = useState(false);
   const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
+
+  const repoUrl = `https://github.com/${result.repo}`;
+
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        setPaletteOpen((o) => !o);
+      }
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
+  function copyText(text: string, msg: string) {
+    navigator.clipboard
+      ?.writeText(text)
+      .then(() => toast.success(msg))
+      .catch(() => toast.error("Clipboard blocked"));
+  }
+
+  const commands: Command[] = [
+    ...TABS.map((t) => ({
+      id: `tab-${t.id}`,
+      label: `Go to ${t.label}`,
+      icon: t.icon,
+      keywords: "tab view",
+      run: () => setTab(t.id),
+    })),
+    {
+      id: "unreleased",
+      label: "Show unreleased changes",
+      icon: FlaskConical,
+      keywords: "staging preview",
+      run: onStaging,
+    },
+    {
+      id: "copy-md",
+      label: "Copy changelog markdown",
+      icon: Copy,
+      run: () => copyText(result.markdown, "Markdown copied"),
+    },
+    {
+      id: "copy-link",
+      label: "Copy shareable link",
+      icon: Link2,
+      run: () =>
+        copyText(
+          typeof window !== "undefined"
+            ? `${window.location.origin}/${result.repo}`
+            : result.repo,
+          "Link copied",
+        ),
+    },
+    {
+      id: "github",
+      label: "Open repository on GitHub",
+      icon: ExternalLink,
+      run: () => window.open(repoUrl, "_blank", "noopener,noreferrer"),
+    },
+    {
+      id: "new-repo",
+      label: "Weave a different repo",
+      icon: RotateCcw,
+      keywords: "reset home",
+      run: onReset,
+    },
+  ];
 
   return (
     <motion.div
@@ -71,6 +156,13 @@ export function Portal({
               className="inline-flex items-center gap-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground"
             >
               <RotateCcw className="size-3.5" /> New repo
+            </button>
+            <button
+              onClick={() => setPaletteOpen(true)}
+              title="Command palette"
+              className="inline-flex items-center gap-1.5 rounded-md border border-border/70 px-2 py-1 text-xs text-muted-foreground transition-colors hover:text-foreground"
+            >
+              <CommandIcon className="size-3" />K
             </button>
           </div>
         </div>
@@ -138,9 +230,15 @@ export function Portal({
       >
         {tab === "changelog" && <ChangelogTab result={result} />}
         {tab === "insights" && <InsightsTab result={result} token={token} />}
-        {tab === "people" && <PeopleTab result={result} />}
+        {tab === "people" && <PeopleTab result={result} token={token} />}
         {tab === "export" && <ExportTab result={result} />}
       </div>
+
+      <CommandPalette
+        open={paletteOpen}
+        onOpenChange={setPaletteOpen}
+        commands={commands}
+      />
     </motion.div>
   );
 }

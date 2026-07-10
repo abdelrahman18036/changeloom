@@ -83,6 +83,28 @@ export interface CategorySlice {
 
 export type SemverBump = "major" | "minor" | "patch" | "none";
 
+export interface UpgradeSignal {
+  label: string;
+  detail: string;
+  weight: "high" | "medium" | "low";
+}
+
+export interface UpgradeRisk {
+  /** 0..100 — how likely this range breaks you on upgrade. */
+  score: number;
+  level: "low" | "moderate" | "high";
+  signals: UpgradeSignal[];
+  /** Security fixes are urgency, not risk — surfaced separately. */
+  hasSecurity: boolean;
+  removedFiles: number;
+  dependencyChanges: number;
+}
+
+export interface CoAuthor {
+  name: string;
+  commits: number;
+}
+
 export interface Tldr {
   commits: number;
   entries: number;
@@ -118,6 +140,10 @@ export interface ChangelogResult {
   security: ChangelogEntry[];
   /** Count of dependency-bump entries in the range. */
   dependencyUpdates: number;
+  /** "Should I upgrade?" risk assessment for this range. */
+  upgradeRisk: UpgradeRisk;
+  /** Co-authors credited via `Co-authored-by:` trailers. */
+  coAuthors: CoAuthor[];
   /** True when head is a branch (unreleased preview), not a tag. */
   staging: boolean;
   /** Repo default branch, for the "Unreleased" staging button. */
