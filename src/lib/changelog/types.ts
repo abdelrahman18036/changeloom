@@ -1,4 +1,5 @@
 import type { Audience, CategoryKey } from "./categories";
+import type { LoomScore } from "./score";
 
 /** A single raw commit as we consume it from the GitHub compare API. */
 export interface RawCommit {
@@ -105,6 +106,7 @@ export interface ChangelogResult {
   churn: Churn | null;
   distribution: CategorySlice[];
   tldr: Tldr;
+  loomScore: LoomScore;
   /** True when the range exceeded GitHub's compare cap (250 commits). */
   truncated: boolean;
   stats: {

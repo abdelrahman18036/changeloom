@@ -18,6 +18,60 @@ const TYPE_TO_CATEGORY: Record<string, CategoryKey> = {
   ci: "chore",
 };
 
+/**
+ * Keyword heuristics for commits that don't follow any convention — first
+ * match wins, ordered by specificity. This keeps real-world repos out of a
+ * giant "Other" bucket without requiring Conventional Commits.
+ */
+const HEURISTICS: { match: RegExp; category: CategoryKey }[] = [
+  { match: /^revert\b/i, category: "fix" },
+  {
+    match: /\b(fix(es|ed)?|bugfix|hotfix|resolve[sd]?|repair(s|ed)?|correct(s|ed)?|patch(es|ed)?)\b/i,
+    category: "fix",
+  },
+  {
+    match: /\b(bump(s|ed)?|upgrade[sd]?|update[sd]? dep(endencie)?s?|dependabot|renovate|lockfile|changelog|release[sd]?|version|prepare|publish)\b/i,
+    category: "chore",
+  },
+  {
+    match: /\b(docs?|documentation|readme|typo(s)?|jsdoc|comment(s)?|guide|example(s)? in docs)\b/i,
+    category: "docs",
+  },
+  {
+    match: /\b(tests?|specs?|coverage|e2e|unit test)\b/i,
+    category: "test",
+  },
+  {
+    match: /\b(refactor(s|ed)?|rewrite|rework(ed)?|restructure[sd]?|clean\s?up|simplif(y|ies|ied)|rename[sd]?|reorganiz|extract(ed)?|move[sd]?\b.*\bto\b)\b/i,
+    category: "refactor",
+  },
+  {
+    match: /\b(optimiz|performance|perf\b|faster|speed(s|ed)? up|reduce[sd]? (memory|allocations|bundle))\b/i,
+    category: "perf",
+  },
+  {
+    match: /\b(ci\b|workflow|github action|pipeline|lint(ing|er)?|prettier|eslint|format(ting)?|build(s)? config)\b/i,
+    category: "chore",
+  },
+  {
+    match: /\b(add(s|ed)?|introduce[sd]?|implement(s|ed)?|support(s)? for|new\b|create[sd]?|enable[sd]?|allow(s|ed)?)\b/i,
+    category: "feature",
+  },
+  {
+    match: /\b(remove[sd]?|delete[sd]?|drop(s|ped)?|deprecate[sd]?)\b/i,
+    category: "refactor",
+  },
+  {
+    match: /\b(improve[sd]?|enhance[sd]?|better|polish(ed)?|tweak(s|ed)?)\b/i,
+    category: "feature",
+  },
+];
+
+function heuristicCategory(subject: string): CategoryKey | null {
+  const hit = HEURISTICS.find((h) => h.match.test(subject));
+  return hit?.category ?? null;
+}
+
 /** Parse `owner` and `name` out of a variety of GitHub URL shapes. */
 export function parseRepoUrl(
   input: string,
@@ -103,8 +157,10 @@ export function categorizeCommit(commit: RawCommit): ChangelogEntry {
     }
   } else if (bodyHasBreaking) {
     category = "breaking";
+  } else {
+    // No convention — fall back to keyword heuristics before "other".
+    category = heuristicCategory(subjectNoPr) ?? "other";
   }
-  // Non-conventional commits with no breaking marker stay in "other".
 
   // An explicit Changelog section in the body wins over the derived subject.
   const authored = extractChangelogSection(commit.message);

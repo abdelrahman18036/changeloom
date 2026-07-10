@@ -2,13 +2,13 @@
 
 import { useState } from "react";
 import { motion } from "motion/react";
-import { ArrowRight, KeyRound, Loader2 } from "lucide-react";
+import { ArrowRight, BadgeCheck, GitCompareArrows, Gauge, KeyRound, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { WarpField } from "@/components/loom/warp-field";
 import { ReleaseRibbon, type RibbonPoint } from "@/components/loom/release-ribbon";
 import { cn } from "@/lib/utils";
 
-const EXAMPLES = ["facebook/react", "vercel/next.js", "honojs/hono", "colinhacks/zod"];
+const EXAMPLES = ["honojs/hono", "vercel/next.js", "colinhacks/zod", "facebook/react"];
 
 const DEMO: RibbonPoint[] = [
   { label: "v1.0", value: 9 },
@@ -21,16 +21,31 @@ const DEMO: RibbonPoint[] = [
   { label: "v2.2", value: 20 },
   { label: "v2.3", value: 9 },
   { label: "v3.0", value: 27 },
+  { label: "v3.1", value: 17 },
+  { label: "v3.2", value: 24 },
 ];
 
-const fade = {
-  hidden: { opacity: 0, y: 12 },
-  show: (i: number) => ({
+const stage = {
+  hidden: {},
+  show: {
+    transition: { staggerChildren: 0.09, delayChildren: 0.05 },
+  },
+};
+
+const rise = {
+  hidden: { opacity: 0, y: 16 },
+  show: {
     opacity: 1,
     y: 0,
-    transition: { delay: 0.05 * i, duration: 0.5, ease: [0.22, 1, 0.36, 1] as const },
-  }),
+    transition: { duration: 0.65, ease: [0.22, 1, 0.36, 1] as const },
+  },
 };
+
+const FEATURES = [
+  { icon: Gauge, text: "Loom Score — grade your changelog hygiene" },
+  { icon: GitCompareArrows, text: "compare any two tags" },
+  { icon: BadgeCheck, text: "live README badge" },
+];
 
 export function Hero({
   onGenerate,
@@ -49,190 +64,184 @@ export function Hero({
   return (
     <section className="relative isolate overflow-hidden">
       {/* Loom-stage back-planes */}
-      <div aria-hidden className="pointer-events-none absolute inset-0 -z-20 opacity-70">
+      <div aria-hidden className="pointer-events-none absolute inset-0 -z-20 opacity-60">
         <WarpField />
       </div>
       <div aria-hidden className="weave-field pointer-events-none absolute inset-0 -z-10" />
+      <div aria-hidden className="weave-grid pointer-events-none absolute inset-0 -z-10" />
 
-      <div className="mx-auto grid max-w-6xl grid-cols-1 gap-10 px-5 pb-16 pt-16 sm:pt-24 lg:grid-cols-12 lg:gap-8">
-        {/* LEFT — the making */}
-        <div className="lg:col-span-7">
-          <motion.div
-            custom={0}
-            variants={fade}
-            initial="hidden"
-            animate="show"
-            className="mb-5 inline-flex items-center gap-2 rounded-full border border-border/70 bg-secondary/40 px-3 py-1"
-          >
-            <span className="size-1.5 rounded-full bg-primary shadow-[0_0_10px_1px_var(--primary)]" />
-            <span className="font-mono text-xs text-muted-foreground">
-              paste a repo · get a portal
-            </span>
-          </motion.div>
-
-          <motion.h1
-            custom={1}
-            variants={fade}
-            initial="hidden"
-            animate="show"
-            className="text-balance text-[clamp(2.5rem,6vw,4.5rem)] font-semibold leading-[1.02] tracking-[-0.03em]"
-          >
-            Weave a repo into a changelog.
-          </motion.h1>
-
-          {/* drawn cobalt weft under the headline */}
-          <motion.svg
-            custom={2}
-            variants={fade}
-            initial="hidden"
-            animate="show"
-            viewBox="0 0 420 12"
-            className="mt-3 h-3 w-64"
-            aria-hidden
-          >
-            <path
-              d="M2 6 C 60 6, 60 6, 120 6 S 200 10, 260 6 S 360 2, 418 6"
-              fill="none"
-              stroke="var(--primary)"
-              strokeWidth={2.5}
-              strokeLinecap="round"
-              className="animate-weft"
-              style={{ ["--dash" as string]: 900 }}
-            />
-          </motion.svg>
-
-          <motion.p
-            custom={3}
-            variants={fade}
-            initial="hidden"
-            animate="show"
-            className="mt-5 max-w-lg text-pretty text-base leading-relaxed text-muted-foreground sm:text-lg"
-          >
-            Paste any GitHub repo and Changeloom threads its commits, releases and
-            contributors into a portal that answers what actually changed — not
-            just a raw list.
-          </motion.p>
-
-          {/* Reed / URL field */}
-          <motion.form
-            custom={4}
-            variants={fade}
-            initial="hidden"
-            animate="show"
-            onSubmit={(e) => {
-              e.preventDefault();
-              onGenerate(url);
-            }}
-            className="mt-8 max-w-xl"
-          >
-            <div
-              className={cn(
-                "flex items-center gap-2 rounded-xl border bg-card/70 p-2 backdrop-blur-sm transition-shadow",
-                "focus-within:thread-ring",
-              )}
-            >
-              <span className="select-none pl-2.5 font-mono text-sm text-muted-foreground">
-                github.com/
-              </span>
-              <Input
-                value={url}
-                onChange={(e) => setUrl(e.target.value)}
-                placeholder="owner/repo"
-                aria-label="GitHub repository"
-                autoComplete="off"
-                autoCapitalize="off"
-                spellCheck={false}
-                className="h-10 flex-1 border-0 bg-transparent px-0 font-mono text-sm shadow-none focus-visible:ring-0 dark:bg-transparent"
-              />
-              <button
-                type="submit"
-                disabled={pending || !url.trim()}
-                className="inline-flex h-11 shrink-0 items-center gap-1.5 rounded-lg bg-primary px-5 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-50"
-              >
-                {pending ? (
-                  <>
-                    <Loader2 className="size-4 animate-spin" /> Weaving
-                  </>
-                ) : (
-                  <>
-                    Weave <ArrowRight className="size-4" />
-                  </>
-                )}
-              </button>
-            </div>
-
-            <div className="mt-4 flex flex-wrap items-center gap-2">
-              <span className="text-xs text-muted-foreground">Try</span>
-              {EXAMPLES.map((ex) => (
-                <button
-                  key={ex}
-                  type="button"
-                  disabled={pending}
-                  onClick={() => {
-                    setUrl(ex);
-                    onGenerate(ex);
-                  }}
-                  className="rounded-full border border-border/70 bg-secondary/40 px-3 py-1 font-mono text-xs text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground disabled:opacity-50"
-                >
-                  {ex}
-                </button>
-              ))}
-            </div>
-
-            <div className="mt-4 flex items-center gap-3">
-              <span className="font-mono text-xs text-muted-foreground/80">
-                open source · no account · no install
-              </span>
-              <button
-                type="button"
-                onClick={() => setShowToken((s) => !s)}
-                className="inline-flex items-center gap-1 text-xs text-muted-foreground transition-colors hover:text-foreground"
-              >
-                <KeyRound className="size-3" />
-                {showToken ? "hide token" : "add token"}
-              </button>
-            </div>
-
-            {showToken && (
-              <div className="animate-rise mt-3 max-w-md">
-                <Input
-                  type="password"
-                  value={token}
-                  onChange={(e) => onToken(e.target.value)}
-                  placeholder="ghp_… (kept in your browser, sent only with your request)"
-                  aria-label="GitHub personal access token"
-                  autoComplete="off"
-                  className="h-9 font-mono text-xs"
-                />
-              </div>
-            )}
-          </motion.form>
-        </div>
-
-        {/* RIGHT — the made thing (live demo ribbon) */}
+      <motion.div
+        variants={stage}
+        initial="hidden"
+        animate="show"
+        className="mx-auto flex max-w-4xl flex-col items-center px-5 pb-14 pt-20 text-center sm:pt-28"
+      >
+        {/* Overline */}
         <motion.div
-          custom={5}
-          variants={fade}
-          initial="hidden"
-          animate="show"
-          className="hidden text-foreground lg:col-span-5 lg:block"
+          variants={rise}
+          className="mb-7 inline-flex items-center gap-2 rounded-full border border-border/70 bg-secondary/40 px-3.5 py-1.5"
         >
-          <div className="pane rounded-2xl p-5">
-            <div className="mb-3 flex items-center justify-between">
-              <span className="font-mono text-xs text-muted-foreground">
-                release ribbon
-              </span>
-              <span className="font-mono text-xs text-muted-foreground/70">
-                demo
-              </span>
+          <span className="size-1.5 rounded-full bg-primary shadow-[0_0_10px_1px_var(--primary)]" />
+          <span className="font-mono text-xs text-muted-foreground">
+            open source · no account · no install
+          </span>
+        </motion.div>
+
+        {/* Headline — Geist with a woven serif accent */}
+        <motion.h1
+          variants={rise}
+          className="text-balance text-[clamp(2.75rem,7.5vw,5.25rem)] font-semibold leading-[0.98] tracking-[-0.025em]"
+        >
+          Weave any repo into
+          <br />
+          <span className="relative inline-block">
+            <span className="font-display italic tracking-normal text-primary">
+              a changelog
+            </span>
+            {/* the weft threads through the word */}
+            <svg
+              viewBox="0 0 340 14"
+              className="absolute -bottom-2 left-0 h-3.5 w-full sm:-bottom-3"
+              aria-hidden
+              preserveAspectRatio="none"
+            >
+              <path
+                d="M4 7 C 50 7, 50 3.5, 96 3.5 S 148 11, 194 11 S 246 3.5, 292 3.5 S 320 7, 336 7"
+                fill="none"
+                stroke="var(--primary)"
+                strokeWidth={2.5}
+                strokeLinecap="round"
+                className="animate-weft"
+                style={{ ["--dash" as string]: 700, opacity: 0.85 }}
+              />
+            </svg>
+          </span>
+        </motion.h1>
+
+        <motion.p
+          variants={rise}
+          className="mt-7 max-w-xl text-pretty text-base leading-relaxed text-muted-foreground sm:text-lg"
+        >
+          Changeloom threads commits, releases and contributors into a portal
+          that answers what actually changed — categorized, scored, exportable.
+        </motion.p>
+
+        {/* The reed — command bar */}
+        <motion.form
+          variants={rise}
+          onSubmit={(e) => {
+            e.preventDefault();
+            onGenerate(url);
+          }}
+          className="mt-9 w-full max-w-2xl"
+        >
+          <div
+            className={cn(
+              "flex items-center gap-2 rounded-2xl border bg-card/80 p-2 pl-4 backdrop-blur-sm transition-shadow duration-300",
+              "focus-within:thread-ring",
+            )}
+          >
+            <span className="hidden select-none font-mono text-sm text-muted-foreground sm:inline">
+              github.com/
+            </span>
+            <Input
+              value={url}
+              onChange={(e) => setUrl(e.target.value)}
+              placeholder="owner/repo"
+              aria-label="GitHub repository"
+              autoComplete="off"
+              autoCapitalize="off"
+              spellCheck={false}
+              className="h-11 flex-1 border-0 bg-transparent px-0 font-mono text-[15px] shadow-none focus-visible:ring-0 dark:bg-transparent"
+            />
+            <kbd className="hidden rounded-md border border-border/70 bg-secondary/60 px-2 py-1 font-mono text-[10px] text-muted-foreground md:inline-block">
+              ↵ Enter
+            </kbd>
+            <button
+              type="submit"
+              disabled={pending || !url.trim()}
+              className="inline-flex h-12 shrink-0 items-center gap-2 rounded-xl bg-primary px-6 text-[15px] font-medium text-primary-foreground transition-all hover:opacity-90 active:scale-[0.98] disabled:opacity-50"
+            >
+              {pending ? (
+                <>
+                  <Loader2 className="size-4 animate-spin" /> Weaving
+                </>
+              ) : (
+                <>
+                  Weave <ArrowRight className="size-4" />
+                </>
+              )}
+            </button>
+          </div>
+
+          <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
+            <span className="text-xs text-muted-foreground">Try</span>
+            {EXAMPLES.map((ex) => (
+              <button
+                key={ex}
+                type="button"
+                disabled={pending}
+                onClick={() => {
+                  setUrl(ex);
+                  onGenerate(ex);
+                }}
+                className="rounded-full border border-border/70 bg-secondary/40 px-3 py-1 font-mono text-xs text-muted-foreground transition-all hover:border-primary/50 hover:text-foreground hover:shadow-[0_0_14px_-4px_var(--primary)] disabled:opacity-50"
+              >
+                {ex}
+              </button>
+            ))}
+            <button
+              type="button"
+              onClick={() => setShowToken((s) => !s)}
+              className="inline-flex items-center gap-1 px-1 text-xs text-muted-foreground/80 transition-colors hover:text-foreground"
+            >
+              <KeyRound className="size-3" />
+              {showToken ? "hide token" : "token"}
+            </button>
+          </div>
+
+          {showToken && (
+            <div className="animate-rise mx-auto mt-3 max-w-md">
+              <Input
+                type="password"
+                value={token}
+                onChange={(e) => onToken(e.target.value)}
+                placeholder="ghp_… (kept in your browser, sent only with your request)"
+                aria-label="GitHub personal access token"
+                autoComplete="off"
+                className="h-9 font-mono text-xs"
+              />
             </div>
-            <ReleaseRibbon points={DEMO} height={180} />
-            <p className="mt-3 font-mono text-[11px] leading-relaxed text-muted-foreground/70">
-              each node is a release · post height = commits shipped
-            </p>
+          )}
+        </motion.form>
+
+        {/* The living ribbon — full-width landscape with the shuttle in flight */}
+        <motion.div variants={rise} className="mt-14 w-full text-foreground">
+          <div className="pane relative overflow-hidden rounded-2xl p-5 sm:p-6">
+            <div className="mb-2 flex items-center justify-between font-mono text-[11px] text-muted-foreground/80">
+              <span>release ribbon</span>
+              <span>node = release · post = commits shipped</span>
+            </div>
+            <ReleaseRibbon points={DEMO} height={170} traveler />
           </div>
         </motion.div>
-      </div>
+
+        {/* Feature ticker */}
+        <motion.div
+          variants={rise}
+          className="mt-8 flex flex-wrap items-center justify-center gap-x-7 gap-y-2.5"
+        >
+          {FEATURES.map((f) => (
+            <span
+              key={f.text}
+              className="inline-flex items-center gap-2 font-mono text-xs text-muted-foreground"
+            >
+              <f.icon className="size-3.5 text-primary" />
+              {f.text}
+            </span>
+          ))}
+        </motion.div>
+      </motion.div>
     </section>
   );
 }

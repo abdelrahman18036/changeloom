@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Check, Copy, Download, Link2, Terminal } from "lucide-react";
+import { BadgeCheck, Check, Copy, Download, Link2, Terminal } from "lucide-react";
 import { toast } from "sonner";
 import type { ChangelogResult } from "@/lib/changelog/types";
 import {
@@ -52,13 +52,19 @@ export function ExportTab({ result }: { result: ChangelogResult }) {
     }
   }, [format, result]);
 
+  const origin = typeof window !== "undefined" ? window.location.origin : "";
+
   const permalink = useMemo(() => {
-    if (typeof window === "undefined") return "";
-    const p = new URLSearchParams({ repo: result.repo });
+    if (!origin) return "";
+    const p = new URLSearchParams();
     if (result.base) p.set("base", result.base);
     if (result.head) p.set("head", result.head);
-    return `${window.location.origin}/?${p}`;
-  }, [result]);
+    const q = p.toString();
+    return `${origin}/${result.repo}${q ? `?${q}` : ""}`;
+  }, [result, origin]);
+
+  const badgeUrl = `${origin}/api/badge/${result.repo}`;
+  const badgeMarkdown = `[![changelog](${badgeUrl})](${origin}/${result.repo})`;
 
   const apiUrl = useMemo(() => {
     const p = new URLSearchParams({ repo: result.repo, format });
@@ -137,6 +143,39 @@ export function ExportTab({ result }: { result: ChangelogResult }) {
         <pre className="max-h-[26rem] overflow-auto rounded-lg border bg-background/60 p-4 font-mono text-xs leading-relaxed text-foreground/80">
           {content}
         </pre>
+      </Panel>
+
+      {/* README badge — the Loom Score, embeddable anywhere */}
+      <Panel>
+        <PanelHeader
+          icon={BadgeCheck}
+          title="README badge"
+          hint="live Loom Score"
+        />
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+          <div className="flex shrink-0 items-center justify-center rounded-lg border bg-background/60 px-5 py-4">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={badgeUrl} alt={`Changelog badge for ${result.repo}`} height={22} />
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="mb-2 text-sm text-muted-foreground">
+              A living badge of this repo&apos;s changelog hygiene — paste it in
+              your README and it links readers straight to this portal.
+            </p>
+            <div className="flex items-start gap-2">
+              <code className="min-w-0 flex-1 overflow-x-auto whitespace-nowrap rounded-lg border bg-background/60 px-3 py-2 font-mono text-xs text-foreground/80">
+                {badgeMarkdown}
+              </code>
+              <button
+                onClick={() => copy(badgeMarkdown, "Badge markdown copied")}
+                aria-label="Copy badge markdown"
+                className="inline-flex size-9 shrink-0 items-center justify-center rounded-lg border bg-panel text-muted-foreground transition-colors hover:text-foreground"
+              >
+                <Copy className="size-4" />
+              </button>
+            </div>
+          </div>
+        </div>
       </Panel>
 
       <div className="grid gap-5 md:grid-cols-2">
