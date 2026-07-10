@@ -1,4 +1,4 @@
-import { ExternalLink, GitFork, Scale, Star } from "lucide-react";
+import { ExternalLink, GitFork, Lock, Scale, Star } from "lucide-react";
 import type { ChangelogResult } from "@/lib/changelog/types";
 import { GithubIcon } from "@/components/logo";
 
@@ -23,6 +23,11 @@ export function VitalSigns({ result }: { result: ChangelogResult }) {
           <span className="font-mono">{result.repo}</span>
           <ExternalLink className="size-3.5 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
         </a>
+        {v?.isPrivate && (
+          <span className="inline-flex items-center gap-1 rounded-full border border-cat-fix/30 bg-cat-fix/10 px-2 py-0.5 text-xs font-medium text-cat-fix">
+            <Lock className="size-3" /> Private
+          </span>
+        )}
       </div>
 
       {v?.description && (

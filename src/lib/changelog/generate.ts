@@ -165,6 +165,7 @@ function toVitals(
     license: meta.license?.spdx_id ?? null,
     pushedAt: meta.pushed_at,
     defaultBranch: meta.default_branch,
+    isPrivate: meta.private === true,
   };
 }
 

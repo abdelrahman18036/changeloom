@@ -31,17 +31,20 @@ Paste a repo — or just open `changeloom.vercel.app/owner/repo` — and land in
 portal with five views:
 
 - **Changelog** — entries categorized (breaking / feature / fix / perf / docs /
-  refactor / test / chore) with a **Ship vs Plumbing** split ("affects you" vs
-  "under the hood"), a deterministic **TL;DR** strip, breaking-change callout,
-  live search, category filters, and pagination.
+  refactor / test / chore) with a **Ship vs Plumbing** split, a deterministic
+  **TL;DR** strip, breaking-change callout, live search, category + **author**
+  filters, a **group-by pivot** (by area / by author), per-entry copy, a
+  **dependency de-noiser**, and pagination.
 - **Compare any two tags** — pick any base…head from the range selector; it
   doubles as the "everything since my version" upgrade digest.
-- **Insights** — **release cadence** (median/avg gap, drought, a woven rhythm
-  ribbon), **release anatomy** (category mix), a **suggested next version**
-  (semver-inferred), and **code hotspots** (most-changed files, +/− churn).
+- **Insights** — the **Loom Score** gauge, **release cadence** + **velocity**,
+  **release anatomy** + a **"shape of the release"** radial fingerprint, a
+  **ship punch-card** (when the team commits), a **building-vs-firefighting**
+  balance, a **suggested next version**, and **code hotspots** (+/− churn).
 - **People** — a **range-scoped contributor leaderboard** (who actually built
-  *this* release — impossible to get natively), drawn as weighted warp threads,
-  with a bus-factor read.
+  *this* release — impossible to get natively) as weighted warp threads, a
+  **contribution-mix** bar per person (what they built), **area ownership**
+  (who owns each scope), and a bus-factor read.
 - **Export** — live switch between **Conventional Markdown**, **Keep a
   Changelog**, plain text, and JSON; copy, download, a shareable permalink, and
   a callable API for CI.
@@ -99,8 +102,22 @@ No env vars are needed for public repos. To raise the hosted rate limit above
 GitHub's 60 req/hr, set a server token (see [`.env.example`](.env.example)):
 
 ```bash
-GITHUB_TOKEN=ghp_xxx
+GITHUB_TOKEN=ghp_xxx   # ⚠️ create with NO scopes — see below
 ```
+
+### ⚠️ Server-token security
+
+`GITHUB_TOKEN` is applied to **every** request that doesn't carry a
+user-supplied token, so it authorizes **all visitors** of your deployment.
+
+- **Create it with no scopes** (public read only). It exists purely to lift the
+  anonymous rate limit.
+- **Never** use a token with the `repo` scope here — that would let anyone read
+  **your** private repos through your deployment, and private repos would keep
+  resolving even after a visitor removes their own token.
+- To read **private** repos, users paste their **own** token in the UI. It's
+  validated (`/api/token/check`), saved in their browser (localStorage), sent
+  only with their requests, and never persisted server-side.
 
 ## API
 

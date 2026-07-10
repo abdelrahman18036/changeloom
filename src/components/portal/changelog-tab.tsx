@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import {
   AlertTriangle,
   Check,
@@ -25,6 +25,13 @@ import { cn } from "@/lib/utils";
 
 const PAGE_SIZE = 20;
 type Audience = "all" | "ship" | "plumbing";
+type GroupBy = "default" | "area" | "author";
+
+function groupKey(e: ChangelogEntry, by: GroupBy): string {
+  if (by === "area") return e.scope ?? "~ no scope";
+  if (by === "author") return e.author ?? "~ unknown";
+  return "";
+}
 
 export function ChangelogTab({ result }: { result: ChangelogResult }) {
   const all = useMemo(() => result.groups.flatMap((g) => g.entries), [result]);
@@ -38,6 +45,7 @@ export function ChangelogTab({ result }: { result: ChangelogResult }) {
   const [cats, setCats] = useState<Set<CategoryKey>>(new Set());
   const [author, setAuthor] = useState("");
   const [hideDeps, setHideDeps] = useState(false);
+  const [groupBy, setGroupBy] = useState<GroupBy>("default");
   const [page, setPage] = useState(0);
   const searchRef = useRef<HTMLInputElement>(null);
 
@@ -50,7 +58,7 @@ export function ChangelogTab({ result }: { result: ChangelogResult }) {
 
   const filtered = useMemo(() => {
     const needle = q.trim().toLowerCase();
-    return all.filter((e) => {
+    const list = all.filter((e) => {
       if (audience !== "all" && e.audience !== audience) return false;
       if (cats.size > 0 && !cats.has(e.category)) return false;
       if (author && e.author !== author) return false;
@@ -61,7 +69,14 @@ export function ChangelogTab({ result }: { result: ChangelogResult }) {
       }
       return true;
     });
-  }, [all, q, audience, cats, author, hideDeps]);
+    if (groupBy !== "default") {
+      // Stable sort so grouped rows cluster under a shared header.
+      return [...list].sort((a, b) =>
+        groupKey(a, groupBy).localeCompare(groupKey(b, groupBy)),
+      );
+    }
+    return list;
+  }, [all, q, audience, cats, author, hideDeps, groupBy]);
 
   const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const clampedPage = Math.min(page, pageCount - 1);
@@ -70,7 +85,7 @@ export function ChangelogTab({ result }: { result: ChangelogResult }) {
     clampedPage * PAGE_SIZE + PAGE_SIZE,
   );
 
-  useEffect(() => setPage(0), [q, audience, cats, author, hideDeps]);
+  useEffect(() => setPage(0), [q, audience, cats, author, hideDeps, groupBy]);
 
   // Keyboard: `/` focus search, `[` `]` paginate.
   useEffect(() => {
@@ -187,6 +202,16 @@ export function ChangelogTab({ result }: { result: ChangelogResult }) {
                 ))}
               </select>
             )}
+            <select
+              value={groupBy}
+              onChange={(e) => setGroupBy(e.target.value as GroupBy)}
+              aria-label="Group entries by"
+              className="h-9 rounded-lg border bg-panel px-2.5 font-mono text-xs text-foreground/90 outline-none focus-visible:border-primary/50"
+            >
+              <option value="default">Group: none</option>
+              <option value="area">By area</option>
+              <option value="author">By author</option>
+            </select>
             <div className="inline-flex rounded-lg border bg-panel p-0.5 text-xs font-medium">
               {(["all", "ship", "plumbing"] as Audience[]).map((a) => (
               <button
@@ -267,14 +292,28 @@ export function ChangelogTab({ result }: { result: ChangelogResult }) {
         </div>
       ) : (
         <ul className="overflow-hidden rounded-xl border bg-panel">
-          {pageItems.map((entry, i) => (
-            <ChangelogRow
-              key={entry.sha}
-              entry={entry}
-              repo={result.repo}
-              last={i === pageItems.length - 1}
-            />
-          ))}
+          {pageItems.map((entry, i) => {
+            const showHeader =
+              groupBy !== "default" &&
+              (i === 0 ||
+                groupKey(entry, groupBy) !== groupKey(pageItems[i - 1], groupBy));
+            return (
+              <Fragment key={entry.sha}>
+                {showHeader && (
+                  <li className="flex items-center gap-2 border-b border-border/60 bg-secondary/40 px-3 py-1.5">
+                    <span className="font-mono text-xs font-medium text-primary">
+                      {groupKey(entry, groupBy)}
+                    </span>
+                  </li>
+                )}
+                <ChangelogRow
+                  entry={entry}
+                  repo={result.repo}
+                  last={i === pageItems.length - 1}
+                />
+              </Fragment>
+            );
+          })}
         </ul>
       )}
 

@@ -1,11 +1,15 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useMemo } from "react";
 import {
   Activity,
+  Clock,
   Fingerprint,
+  Flame,
   Gauge,
   GitCommitHorizontal,
+  Hammer,
   Loader2,
   RefreshCw,
   TrendingUp,
@@ -15,6 +19,7 @@ import type { CadenceInsights } from "@/lib/changelog/insights";
 import { CadenceRibbon } from "@/components/loom/cadence-ribbon";
 import { VelocityChart } from "@/components/loom/velocity-chart";
 import { ReleaseShape } from "@/components/loom/release-shape";
+import { PunchCard } from "@/components/loom/punch-card";
 import { LoomScoreGauge } from "@/components/loom/loom-score-gauge";
 import { DistributionBar } from "@/components/loom/distribution-bar";
 import { ChurnBars } from "@/components/loom/churn-bars";
@@ -56,6 +61,20 @@ export function InsightsTab({
       });
     return () => controller.abort();
   }, [result.repo, token, reloadKey]);
+
+  const allEntries = useMemo(
+    () => result.groups.flatMap((g) => g.entries),
+    [result.groups],
+  );
+
+  // Building vs firefighting: features/perf (forward) vs fixes (reactive).
+  const building =
+    (result.stats.byCategory.feature ?? 0) + (result.stats.byCategory.perf ?? 0);
+  const firefighting = result.stats.byCategory.fix ?? 0;
+  const balanceTotal = building + firefighting;
+  const buildingPct = balanceTotal
+    ? Math.round((building / balanceTotal) * 100)
+    : null;
 
   return (
     <div className="grid gap-5 lg:grid-cols-2">
@@ -146,6 +165,45 @@ export function InsightsTab({
           every release has a silhouette
         </p>
       </Panel>
+
+      {/* Ship punch-card */}
+      <Panel>
+        <PanelHeader icon={Clock} title="When they ship" hint="commit times" />
+        <PunchCard entries={allEntries} />
+        <p className="mt-3 font-mono text-[11px] text-muted-foreground/70">
+          brighter = more commits in that day + time-of-day
+        </p>
+      </Panel>
+
+      {/* Building vs firefighting */}
+      {buildingPct !== null && (
+        <Panel>
+          <PanelHeader icon={Hammer} title="Building vs firefighting" hint="this range" />
+          <div className="mb-2 flex items-baseline justify-between">
+            <span className="inline-flex items-center gap-1.5 text-sm">
+              <Hammer className="size-3.5 text-cat-feature" />
+              <span className="font-mono text-lg font-semibold tabular-nums">
+                {buildingPct}%
+              </span>
+              building
+            </span>
+            <span className="inline-flex items-center gap-1.5 text-sm text-muted-foreground">
+              firefighting{" "}
+              <span className="font-mono font-semibold text-foreground">
+                {100 - buildingPct}%
+              </span>
+              <Flame className="size-3.5 text-cat-fix" />
+            </span>
+          </div>
+          <div className="flex h-2.5 overflow-hidden rounded-full bg-secondary">
+            <div style={{ width: `${buildingPct}%`, backgroundColor: "var(--cat-feature)" }} />
+            <div style={{ width: `${100 - buildingPct}%`, backgroundColor: "var(--cat-fix)" }} />
+          </div>
+          <p className="mt-2.5 text-xs text-muted-foreground">
+            {building} new features &amp; perf wins vs {firefighting} bug fixes.
+          </p>
+        </Panel>
+      )}
 
       {/* Churn */}
       <Panel>

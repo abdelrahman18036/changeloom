@@ -8,6 +8,7 @@ import {
   Copy,
   Download,
   Link2,
+  Lock,
   Rocket,
   Rss,
   Share2,
@@ -79,6 +80,9 @@ export function ExportTab({ result }: { result: ChangelogResult }) {
   const feedUrl = `${origin}/api/feed/${result.repo}`;
   const llmsUrl = `${origin}/api/llms/${result.repo}`;
   const repoUrl = `https://github.com/${result.repo}`;
+  // Public-sharing surfaces (badge / feed / OG / permalink / CI API) are
+  // server-fetched with no visitor token, so they can't resolve a private repo.
+  const isPrivate = result.vitals?.isPrivate ?? false;
 
   // One-click GitHub Release drafter — deep-link, no auth. GitHub caps the
   // URL length, so only inline the body when it fits; otherwise copy the full
@@ -234,6 +238,21 @@ export function ExportTab({ result }: { result: ChangelogResult }) {
         </Panel>
       </div>
 
+      {isPrivate && (
+        <div className="flex items-start gap-2.5 rounded-xl border border-cat-fix/30 bg-cat-fix/10 p-4 text-sm">
+          <Lock className="mt-0.5 size-4 shrink-0 text-cat-fix" />
+          <p className="text-muted-foreground">
+            This is a <strong className="text-foreground">private repo</strong>, so
+            the public-sharing surfaces below (README badge, Atom feed, llms.txt,
+            OG card, shareable link and CI API) are hidden — they&apos;re fetched
+            without a viewer&apos;s token and would fail for anyone else. The
+            Markdown/JSON export and the Release drafter above still work.
+          </p>
+        </div>
+      )}
+
+      {!isPrivate && (
+        <>
       {/* Machine-readable — feeds & AI agents */}
       <Panel>
         <PanelHeader icon={Bot} title="Machine-readable" hint="feeds & AI agents" />
@@ -337,6 +356,8 @@ export function ExportTab({ result }: { result: ChangelogResult }) {
           </div>
         </Panel>
       </div>
+        </>
+      )}
     </div>
   );
 }
