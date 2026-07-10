@@ -80,17 +80,30 @@ export function ExportTab({ result }: { result: ChangelogResult }) {
   const llmsUrl = `${origin}/api/llms/${result.repo}`;
   const repoUrl = `https://github.com/${result.repo}`;
 
-  // One-click GitHub Release drafter — deep-link, no auth.
-  const releaseDraftUrl = useMemo(() => {
+  // One-click GitHub Release drafter — deep-link, no auth. GitHub caps the
+  // URL length, so only inline the body when it fits; otherwise copy the full
+  // notes to the clipboard and let the user paste.
+  function draftRelease() {
     const tag = result.head ?? "";
     const title = `${tag} — ${result.codename}`;
-    const p = new URLSearchParams({
-      tag,
-      title,
-      body: `${result.markdown}\n\n---\n_Woven by [Changeloom](${origin}/${result.repo})._`,
-    });
-    return `${repoUrl}/releases/new?${p}`;
-  }, [result, origin, repoUrl]);
+    const body = `${result.markdown}\n\n---\n_Woven by [Changeloom](${origin}/${result.repo})._`;
+    const base = new URLSearchParams({ tag, title });
+    const withBody = new URLSearchParams({ tag, title, body });
+    const fits = `${repoUrl}/releases/new?${withBody}`.length < 6000;
+
+    if (!fits) {
+      navigator.clipboard
+        ?.writeText(body)
+        .then(() =>
+          toast.success("Full changelog copied — paste it into the release body", {
+            description: "The notes were too long for the URL, so we opened the draft with the title pre-filled.",
+          }),
+        )
+        .catch(() => {});
+    }
+    const url = `${repoUrl}/releases/new?${fits ? withBody : base}`;
+    window.open(url, "_blank", "noopener,noreferrer");
+  }
 
   // Pre-composed social share intents.
   const shareText = `What changed in ${result.repo} ${result.base ? `(${result.base}…${result.head})` : ""} — Loom Score ${result.loomScore.grade}`;
@@ -189,14 +202,12 @@ export function ExportTab({ result }: { result: ChangelogResult }) {
             Draft a GitHub Release pre-filled with these notes — you land one
             click from Publish.
           </p>
-          <a
-            href={releaseDraftUrl}
-            target="_blank"
-            rel="noreferrer"
+          <button
+            onClick={draftRelease}
             className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-primary px-3.5 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90"
           >
             <Rocket className="size-4" /> Draft GitHub Release
-          </a>
+          </button>
         </Panel>
 
         <Panel>

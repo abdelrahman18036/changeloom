@@ -267,13 +267,24 @@ export function Hero({
               aria-expanded={showToken}
               className={cn(
                 "inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs transition-colors",
-                showToken
-                  ? "border-primary/40 bg-primary/10 text-primary"
-                  : "border-border/70 text-muted-foreground hover:text-foreground",
+                saved
+                  ? "border-primary/50 bg-primary/15 text-primary"
+                  : showToken
+                    ? "border-primary/40 bg-primary/10 text-primary"
+                    : "border-border/70 text-muted-foreground hover:text-foreground",
               )}
             >
-              <Lock className="size-3" />
-              Private repo?
+              {saved ? (
+                <>
+                  <ShieldCheck className="size-3" />
+                  Token active · @{saved.login}
+                </>
+              ) : (
+                <>
+                  <Lock className="size-3" />
+                  Private repo?
+                </>
+              )}
             </button>
           </div>
 
