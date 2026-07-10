@@ -7,12 +7,27 @@ import type { ChangelogResult } from "@/lib/changelog/types";
 import { Hero } from "@/components/app/hero";
 import { Portal } from "@/components/portal/portal";
 import { WeaveLoader } from "@/components/loom/weave-loader";
+import { loadToken } from "@/lib/token-storage";
 
 type Phase = "hero" | "loading" | "portal";
 
 interface ApiError {
   error: string;
   reason: string;
+  retryAt?: string;
+}
+
+/** "…Try again in 42 min (around 8:55 PM)." */
+function retrySuffix(retryAt?: string): string {
+  if (!retryAt) return "";
+  const reset = new Date(retryAt).getTime();
+  if (!Number.isFinite(reset)) return "";
+  const mins = Math.max(1, Math.round((reset - Date.now()) / 60000));
+  const time = new Date(retryAt).toLocaleTimeString([], {
+    hour: "numeric",
+    minute: "2-digit",
+  });
+  return ` Try again in ${mins} min (around ${time}), or add a token below for 5,000/hr.`;
 }
 
 export function ChangeloomApp({
@@ -80,16 +95,20 @@ export function ChangeloomApp({
         });
         const data = await res.json();
         if (!res.ok) {
-          const { error: err, reason } = data as ApiError;
+          const { error: err, reason, retryAt } = data as ApiError;
           // A 404 with no token most often means a private repo.
           const isPrivateGuess = reason === "not_found" && !token;
+          const isRateLimit = reason === "rate_limit";
           const msg = isPrivateGuess
             ? "We couldn't find that repository. If it's private, add a personal access token and try again."
-            : (err ?? "Something went wrong.");
+            : isRateLimit
+              ? `${err ?? "GitHub's rate limit is reached."}${retrySuffix(retryAt)}`
+              : (err ?? "Something went wrong.");
           if (opts.inPortal) toast.error(msg);
           else {
             setError(msg);
-            setTokenHint(isPrivateGuess);
+            // Adding a token fixes both private-repo and rate-limit cases.
+            setTokenHint((isPrivateGuess || isRateLimit) && !token);
             setPhase("hero");
           }
           return;
@@ -111,6 +130,12 @@ export function ChangeloomApp({
     },
     [token, syncUrl],
   );
+
+  // Restore a token saved in the browser on a previous visit.
+  useEffect(() => {
+    const saved = loadToken();
+    if (saved) setToken(saved.token);
+  }, []);
 
   // Permalinks: /owner/repo path routes pass initialRepo; the legacy
   // ?repo= query form still works on the home page.
