@@ -1,0 +1,23 @@
+name: Feature request
+description: Suggest an idea for Changeloom
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem does this solve?
+      description: Describe the use case or pain point.
+    validations:
+      required: true
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed solution
+    validations:
+      required: false
+  - type: checkboxes
+    id: github-gap
+    attributes:
+      label: GitHub gap
+      options:
+        - label: This is something GitHub's native release notes can't do well
