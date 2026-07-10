@@ -27,7 +27,8 @@ can't show you in one place.
 
 ## Features
 
-Paste a repo → land in a portal with five views:
+Paste a repo — or just open `changeloom.dev/owner/repo` — and land in a
+portal with five views:
 
 - **Changelog** — entries categorized (breaking / feature / fix / perf / docs /
   refactor / test / chore) with a **Ship vs Plumbing** split ("affects you" vs
@@ -44,9 +45,20 @@ Paste a repo → land in a portal with five views:
 - **Export** — live switch between **Conventional Markdown**, **Keep a
   Changelog**, plain text, and JSON; copy, download, a shareable permalink, and
   a callable API for CI.
+- **Loom Score** — a 0–100 grade of the range's changelog hygiene
+  (conventional-commit adoption, PR linkage, scoped changes, documented
+  breaking changes), rendered as an animated gauge.
+- **Live README badge** — embed the score anywhere; it links readers straight
+  to the portal:
+
+  ```md
+  [![changelog](https://changeloom.dev/api/badge/owner/repo)](https://changeloom.dev/owner/repo)
+  ```
 
 Everything runs on the **rule-based engine** — no AI required. The baseline is
-fully deterministic and offline-safe.
+fully deterministic and offline-safe, and a keyword heuristic layer
+categorizes non-conventional commits ("fix crash on start", "add dark mode")
+so real-world history doesn't collapse into "Other".
 
 ## Tech stack
 
@@ -83,6 +95,7 @@ The portal is backed by three endpoints:
 | `POST /api/changelog` | Full portal payload for a repo (+ optional `base`/`head`/`token`) |
 | `GET /api/changelog?repo=o/r&format=md\|keepachangelog\|plain\|json` | Callable export for CI pipelines |
 | `GET /api/insights?repo=o/r` | Release cadence / velocity (lazy) |
+| `GET /api/badge/owner/repo` | Embeddable SVG badge with the repo's Loom Score |
 
 ```bash
 curl "https://changeloom.dev/api/changelog?repo=honojs/hono&format=md"

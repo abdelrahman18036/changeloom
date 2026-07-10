@@ -1,38 +1,71 @@
 import { cn } from "@/lib/utils";
 
 /**
- * Changeloom mark — warp threads (neutral) with a single cobalt weft
- * thread woven over/under them. The "loom" weaving the changelog.
+ * Changeloom mark — a woven tile with TRUE over-under interlacing.
+ *
+ * Two cobalt weft threads cross three warp threads. Draw order does the
+ * weaving: wefts first, warps on top (warp-over everywhere), then short weft
+ * segments re-drawn on top at the crossings where the weft binds over.
  */
 export function LoomMark({ className }: { className?: string }) {
   return (
     <svg
-      viewBox="0 0 24 24"
+      viewBox="0 0 32 32"
       fill="none"
       className={cn("size-6", className)}
       aria-hidden
     >
-      {/* Warp — vertical threads */}
-      <g stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" opacity="0.4">
-        <line x1="6" y1="3.5" x2="6" y2="20.5" />
-        <line x1="12" y1="3.5" x2="12" y2="20.5" />
-        <line x1="18" y1="3.5" x2="18" y2="20.5" />
-      </g>
-      {/* Weft — the cobalt thread weaving through */}
+      <defs>
+        <linearGradient id="weft" x1="0" y1="0" x2="32" y2="0" gradientUnits="userSpaceOnUse">
+          <stop offset="0" stopColor="var(--primary)" />
+          <stop offset="1" stopColor="var(--thread-signal, var(--primary))" />
+        </linearGradient>
+      </defs>
+
+      {/* tile */}
+      <rect x="1" y="1" width="30" height="30" rx="8.5" fill="var(--card)" stroke="var(--border)" />
+
+      {/* wefts (under layer) */}
       <path
-        d="M3 8 C 6 8, 6 8, 9 8 S 12 12, 15 12 S 18 8, 21 8"
-        stroke="var(--primary)"
-        strokeWidth="2"
+        d="M5.5 13 C 8 13, 8 11.5, 10.5 11.5 S 13.5 14.5, 16 14.5 S 19 11.5, 21.5 11.5 S 24 13, 26.5 13"
+        stroke="url(#weft)"
+        strokeWidth="2.4"
         strokeLinecap="round"
-        fill="none"
       />
       <path
-        d="M3 16 C 6 16, 6 16, 9 16 S 12 12, 15 12 S 18 16, 21 16"
-        stroke="var(--primary)"
-        strokeWidth="2"
+        d="M5.5 19 C 8 19, 8 20.5, 10.5 20.5 S 13.5 17.5, 16 17.5 S 19 20.5, 21.5 20.5 S 24 19, 26.5 19"
+        stroke="url(#weft)"
+        strokeWidth="2.4"
         strokeLinecap="round"
-        fill="none"
-        opacity="0.55"
+        opacity="0.62"
+      />
+
+      {/* warps (drawn over both wefts) */}
+      <g stroke="currentColor" strokeWidth="2" strokeLinecap="round" opacity="0.5">
+        <line x1="10.5" y1="6" x2="10.5" y2="26" />
+        <line x1="16" y1="6" x2="16" y2="26" />
+        <line x1="21.5" y1="6" x2="21.5" y2="26" />
+      </g>
+
+      {/* weft-over segments: weft A binds over warp 1 & 3, weft B over warp 2 */}
+      <path
+        d="M8.6 11.7 C 9.4 11.5, 9.7 11.5, 10.5 11.5 C 11.3 11.5, 11.8 11.7, 12.4 12.1"
+        stroke="url(#weft)"
+        strokeWidth="2.4"
+        strokeLinecap="round"
+      />
+      <path
+        d="M19.6 12.1 C 20.2 11.7, 20.7 11.5, 21.5 11.5 C 22.3 11.5, 22.6 11.6, 23.4 11.8"
+        stroke="url(#weft)"
+        strokeWidth="2.4"
+        strokeLinecap="round"
+      />
+      <path
+        d="M14.1 17.9 C 14.7 17.6, 15.2 17.5, 16 17.5 C 16.8 17.5, 17.3 17.6, 17.9 17.9"
+        stroke="url(#weft)"
+        strokeWidth="2.4"
+        strokeLinecap="round"
+        opacity="0.62"
       />
     </svg>
   );
@@ -54,10 +87,11 @@ export function GithubIcon({ className }: { className?: string }) {
 
 export function Wordmark({ className }: { className?: string }) {
   return (
-    <span className={cn("inline-flex items-center gap-2", className)}>
-      <LoomMark className="size-6 text-foreground" />
+    <span className={cn("group/mark inline-flex items-center gap-2.5", className)}>
+      <LoomMark className="size-7 text-foreground transition-transform duration-300 group-hover/mark:rotate-[8deg]" />
       <span className="text-[15px] font-semibold tracking-tight">
-        Changeloom
+        Change
+        <span className="font-display italic text-primary">loom</span>
       </span>
     </span>
   );

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import {
   Activity,
+  Gauge,
   GitCommitHorizontal,
   Loader2,
   RefreshCw,
@@ -11,6 +12,7 @@ import {
 import type { ChangelogResult } from "@/lib/changelog/types";
 import type { CadenceInsights } from "@/lib/changelog/insights";
 import { CadenceRibbon } from "@/components/loom/cadence-ribbon";
+import { LoomScoreGauge } from "@/components/loom/loom-score-gauge";
 import { DistributionBar } from "@/components/loom/distribution-bar";
 import { ChurnBars } from "@/components/loom/churn-bars";
 import { AnimatedNumber } from "@/components/ui/animated-number";
@@ -54,6 +56,16 @@ export function InsightsTab({
 
   return (
     <div className="grid gap-5 lg:grid-cols-2">
+      {/* Loom Score — changelog hygiene grade */}
+      <Panel className="lg:col-span-2">
+        <PanelHeader
+          icon={Gauge}
+          title="Loom Score"
+          hint="changelog hygiene, 0–100"
+        />
+        <LoomScoreGauge score={result.loomScore} />
+      </Panel>
+
       {/* Ship Rhythm */}
       <Panel className="lg:col-span-2">
         <PanelHeader icon={Activity} title="Ship rhythm" hint="from releases" />

@@ -15,6 +15,7 @@ import {
   computeDistribution,
 } from "./insights";
 import { renderMarkdown } from "./render";
+import { computeLoomScore } from "./score";
 import type {
   ChangelogEntry,
   ChangelogGroup,
@@ -270,6 +271,10 @@ export async function generateChangelog(
   const shipCount = entries.filter((e) => e.audience === "ship").length;
 
   const markdown = renderMarkdown({ owner, name, base, head, rangeMode, groups });
+  const loomScore = computeLoomScore(
+    entries,
+    rawEntries.map((c) => c.message.split("\n")[0].trim()),
+  );
 
   return {
     repo: `${owner}/${name}`,
@@ -287,6 +292,7 @@ export async function generateChangelog(
     churn,
     distribution,
     truncated,
+    loomScore,
     tldr: {
       commits: totalCommits,
       entries: entries.length,

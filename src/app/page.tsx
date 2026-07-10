@@ -4,7 +4,7 @@ import { ChangeloomApp } from "@/components/app/changeloom-app";
 
 export default function Home() {
   return (
-    <div className="flex min-h-full flex-col">
+    <div className="flex min-h-dvh flex-col">
       <SiteHeader />
       <main className="flex-1">
         <ChangeloomApp />

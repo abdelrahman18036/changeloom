@@ -16,8 +16,16 @@ interface ApiError {
   reason: string;
 }
 
-export function ChangeloomApp() {
-  const [phase, setPhase] = useState<Phase>("hero");
+export function ChangeloomApp({
+  initialRepo,
+  initialBase,
+  initialHead,
+}: {
+  initialRepo?: string;
+  initialBase?: string;
+  initialHead?: string;
+} = {}) {
+  const [phase, setPhase] = useState<Phase>(initialRepo ? "loading" : "hero");
   const [result, setResult] = useState<ChangelogResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [rangePending, setRangePending] = useState(false);
@@ -30,10 +38,12 @@ export function ChangeloomApp() {
       window.history.replaceState(null, "", "/");
       return;
     }
-    const p = new URLSearchParams({ repo: r.repo });
+    // Clean path-style permalink: /owner/repo?base=..&head=..
+    const p = new URLSearchParams();
     if (r.base) p.set("base", r.base);
     if (r.head) p.set("head", r.head);
-    window.history.replaceState(null, "", `/?${p}`);
+    const q = p.toString();
+    window.history.replaceState(null, "", `/${r.repo}${q ? `?${q}` : ""}`);
   }, []);
 
   const run = useCallback(
@@ -87,16 +97,21 @@ export function ChangeloomApp() {
     [token, syncUrl],
   );
 
-  // Permalink: auto-generate from ?repo=&base=&head= on first load.
+  // Permalinks: /owner/repo path routes pass initialRepo; the legacy
+  // ?repo= query form still works on the home page.
   useEffect(() => {
     if (booted.current) return;
     booted.current = true;
+    if (initialRepo) {
+      run(initialRepo, { base: initialBase, head: initialHead });
+      return;
+    }
     const p = new URLSearchParams(window.location.search);
     const repo = p.get("repo");
     if (repo) {
       run(repo, { base: p.get("base") ?? undefined, head: p.get("head") ?? undefined });
     }
-  }, [run]);
+  }, [run, initialRepo, initialBase, initialHead]);
 
   function reset() {
     setResult(null);

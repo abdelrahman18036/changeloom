@@ -1,3 +1,6 @@
+"use client";
+
+import { useReducedMotion } from "motion/react";
 import { cn } from "@/lib/utils";
 
 export interface RibbonPoint {
@@ -9,21 +12,24 @@ export interface RibbonPoint {
 
 /**
  * A horizontal release timeline: diamond version nodes threaded by a single
- * cobalt weft polyline, each node's post height encoding its magnitude. Draws
- * on mount (remount via `key` to redraw for new data). Reduced-motion shows it
- * fully drawn.
+ * cobalt weft polyline, each node's post height encoding its magnitude.
+ * Draws on mount; with `traveler`, a luminous shuttle rides the weft
+ * continuously. Reduced motion renders everything static.
  */
 export function ReleaseRibbon({
   points,
   animate = true,
+  traveler = false,
   className,
   height = 150,
 }: {
   points: RibbonPoint[];
   animate?: boolean;
+  traveler?: boolean;
   className?: string;
   height?: number;
 }) {
+  const reduce = useReducedMotion();
   const W = 640;
   const H = height;
   const padX = 20;
@@ -42,6 +48,9 @@ export function ReleaseRibbon({
   });
 
   const weft = nodes.map((nd) => `${nd.x},${nd.y}`).join(" ");
+  const weftPath = nodes
+    .map((nd, i) => `${i === 0 ? "M" : "L"} ${nd.x} ${nd.y}`)
+    .join(" ");
 
   return (
     <svg
@@ -83,7 +92,7 @@ export function ReleaseRibbon({
         strokeWidth={2.25}
         strokeLinejoin="round"
         strokeLinecap="round"
-        className={animate ? "animate-weft" : undefined}
+        className={animate && !reduce ? "animate-weft" : undefined}
         style={{ ["--dash" as string]: W * 2 }}
       />
 
@@ -102,6 +111,24 @@ export function ReleaseRibbon({
           />
         </g>
       ))}
+
+      {/* the shuttle in flight */}
+      {traveler && !reduce && n > 1 && (
+        <circle
+          r={3.4}
+          fill="var(--thread-signal)"
+          style={{ filter: "drop-shadow(0 0 6px var(--primary))" }}
+        >
+          <animateMotion
+            dur="7s"
+            repeatCount="indefinite"
+            keyPoints="0;1;0"
+            keyTimes="0;0.5;1"
+            calcMode="linear"
+            path={weftPath}
+          />
+        </circle>
+      )}
     </svg>
   );
 }
