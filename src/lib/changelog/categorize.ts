@@ -146,6 +146,21 @@ function stripGit(name: string): string {
   return name.replace(/\.git$/i, "");
 }
 
+/**
+ * Collapse any GitHub URL / shorthand a user pastes into a clean `owner/repo`.
+ * Returns the trimmed input unchanged when it isn't a recognizable repo yet
+ * (e.g. mid-typing), so it's safe to run on every keystroke.
+ */
+export function normalizeRepoInput(input: string): string {
+  const parsed = parseRepoUrl(input);
+  return parsed ? `${parsed.owner}/${parsed.name}` : input.trim();
+}
+
+/** True when the input resolves to a valid owner/repo. */
+export function isValidRepo(input: string): boolean {
+  return parseRepoUrl(input) !== null;
+}
+
 const CONVENTIONAL_RE = /^(\w+)(?:\(([^)]+)\))?(!)?:\s*(.+)$/;
 const PR_RE = /\(#(\d+)\)\s*$/;
 const BREAKING_RE = /BREAKING[ -]CHANGE[s]?:?\s*(.*)/i;

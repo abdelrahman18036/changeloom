@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { toast } from "sonner";
-import { AlertCircle } from "lucide-react";
 import type { ChangelogResult } from "@/lib/changelog/types";
 import { Hero } from "@/components/app/hero";
 import { Portal } from "@/components/portal/portal";
@@ -30,6 +29,9 @@ export function ChangeloomApp({
   const [error, setError] = useState<string | null>(null);
   const [rangePending, setRangePending] = useState(false);
   const [token, setToken] = useState("");
+  const [tokenHint, setTokenHint] = useState(false);
+  // Lifted so the typed repo survives the hero → loading → hero remount.
+  const [input, setInput] = useState(initialRepo ?? "");
   const booted = useRef(false);
 
   const syncUrl = useCallback((r: ChangelogResult | null) => {
@@ -61,6 +63,7 @@ export function ChangeloomApp({
       if (opts.inPortal) setRangePending(true);
       else {
         setError(null);
+        setTokenHint(false);
         setPhase("loading");
       }
       try {
@@ -77,10 +80,16 @@ export function ChangeloomApp({
         });
         const data = await res.json();
         if (!res.ok) {
-          const msg = (data as ApiError).error ?? "Something went wrong.";
+          const { error: err, reason } = data as ApiError;
+          // A 404 with no token most often means a private repo.
+          const isPrivateGuess = reason === "not_found" && !token;
+          const msg = isPrivateGuess
+            ? "We couldn't find that repository. If it's private, add a personal access token and try again."
+            : (err ?? "Something went wrong.");
           if (opts.inPortal) toast.error(msg);
           else {
             setError(msg);
+            setTokenHint(isPrivateGuess);
             setPhase("hero");
           }
           return;
@@ -122,6 +131,7 @@ export function ChangeloomApp({
   function reset() {
     setResult(null);
     setError(null);
+    setInput("");
     setPhase("hero");
     syncUrl(null);
   }
@@ -153,18 +163,16 @@ export function ChangeloomApp({
         </motion.div>
       ) : (
         <motion.div key="hero" exit={{ opacity: 0 }}>
-          <Hero onGenerate={(url) => run(url)} pending={false} token={token} onToken={setToken} />
-          {error && (
-            <div className="mx-auto -mt-6 mb-16 max-w-xl px-5">
-              <div className="flex items-start gap-3 rounded-xl border border-destructive/30 bg-destructive/10 p-4">
-                <AlertCircle className="mt-0.5 size-5 shrink-0 text-destructive" />
-                <div>
-                  <p className="text-sm font-medium">Couldn&apos;t weave that repo</p>
-                  <p className="text-sm text-muted-foreground">{error}</p>
-                </div>
-              </div>
-            </div>
-          )}
+          <Hero
+            value={input}
+            onValueChange={setInput}
+            onGenerate={(url) => run(url)}
+            pending={false}
+            token={token}
+            onToken={setToken}
+            openToken={tokenHint}
+            error={error}
+          />
         </motion.div>
       )}
     </AnimatePresence>

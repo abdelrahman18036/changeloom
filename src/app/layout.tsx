@@ -23,7 +23,7 @@ const instrumentSerif = Instrument_Serif({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://changeloom.dev"),
+  metadataBase: new URL("https://changeloom.vercel.app"),
   title: {
     default: "Changeloom — Paste a repo URL, get a changelog",
     template: "%s · Changeloom",
@@ -41,7 +41,7 @@ export const metadata: Metadata = {
     title: "Changeloom — Paste a repo URL, get a changelog",
     description:
       "Weave your commits into a clean, categorized changelog. No install, no config, no account.",
-    url: "https://changeloom.dev",
+    url: "https://changeloom.vercel.app",
     siteName: "Changeloom",
     type: "website",
   },

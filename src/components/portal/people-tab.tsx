@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Users } from "lucide-react";
 import type { ChangelogResult } from "@/lib/changelog/types";
+import { CATEGORY_MAP, type CategoryKey } from "@/lib/changelog/categories";
 import { ContributorWarp } from "@/components/loom/contributor-warp";
 import { Panel, PanelHeader } from "@/components/portal/panel";
 
@@ -11,6 +12,20 @@ const INITIAL = 15;
 export function PeopleTab({ result }: { result: ChangelogResult }) {
   const [expanded, setExpanded] = useState(false);
   const contributors = result.contributors;
+
+  // What each author actually built, by category — "who did what".
+  const authorMix = useMemo(() => {
+    const map = new Map<string, Map<CategoryKey, number>>();
+    for (const g of result.groups) {
+      for (const e of g.entries) {
+        if (!e.author) continue;
+        const m = map.get(e.author) ?? new Map<CategoryKey, number>();
+        m.set(g.category, (m.get(g.category) ?? 0) + 1);
+        map.set(e.author, m);
+      }
+    }
+    return map;
+  }, [result.groups]);
   const shown = expanded ? contributors : contributors.slice(0, INITIAL);
   const top = contributors[0];
   const topShare = top ? Math.round(top.share * 100) : 0;
@@ -91,12 +106,7 @@ export function PeopleTab({ result }: { result: ChangelogResult }) {
                 >
                   {c.login}
                 </a>
-                <div className="hidden h-1.5 w-28 overflow-hidden rounded-full bg-secondary sm:block">
-                  <div
-                    className="h-full rounded-full bg-primary"
-                    style={{ width: `${Math.max(4, pct)}%` }}
-                  />
-                </div>
+                <ContributionMix mix={authorMix.get(c.login)} />
                 <span className="w-16 shrink-0 text-right font-mono text-xs tabular-nums text-muted-foreground">
                   {c.commits}
                 </span>
@@ -116,6 +126,36 @@ export function PeopleTab({ result }: { result: ChangelogResult }) {
           </button>
         )}
       </div>
+
+      <p className="px-1 text-xs text-muted-foreground">
+        Each bar shows <span className="text-foreground/80">what that person built</span>,
+        by category — not just how much.
+      </p>
+    </div>
+  );
+}
+
+/** A tiny stacked bar of one contributor's work, by category. */
+function ContributionMix({ mix }: { mix?: Map<CategoryKey, number> }) {
+  if (!mix || mix.size === 0) {
+    return <div className="hidden h-1.5 w-28 rounded-full bg-secondary sm:block" />;
+  }
+  const entries = [...mix.entries()].sort((a, b) => b[1] - a[1]);
+  const total = entries.reduce((n, [, v]) => n + v, 0) || 1;
+  const label = entries
+    .map(([cat, n]) => `${CATEGORY_MAP[cat].label}: ${n}`)
+    .join(", ");
+  return (
+    <div
+      className="hidden h-1.5 w-28 overflow-hidden rounded-full bg-secondary sm:flex"
+      title={label}
+    >
+      {entries.map(([cat, n]) => (
+        <div
+          key={cat}
+          style={{ width: `${(n / total) * 100}%`, backgroundColor: CATEGORY_MAP[cat].colorVar }}
+        />
+      ))}
     </div>
   );
 }
