@@ -24,6 +24,8 @@ const TYPE_TO_CATEGORY: Record<string, CategoryKey> = {
  * giant "Other" bucket without requiring Conventional Commits.
  */
 const HEURISTICS: { match: RegExp; category: CategoryKey }[] = [
+  // Bare version subjects ("4.12.29", "v2.0.0") are release commits.
+  { match: /^v?\d+\.\d+(\.\d+)?(-[\w.]+)?$/i, category: "chore" },
   { match: /^revert\b/i, category: "fix" },
   {
     match: /\b(fix(es|ed)?|bugfix|hotfix|resolve[sd]?|repair(s|ed)?|correct(s|ed)?|patch(es|ed)?)\b/i,
