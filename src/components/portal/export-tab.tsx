@@ -1,0 +1,188 @@
+"use client";
+
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Check, Copy, Download, Link2, Terminal } from "lucide-react";
+import { toast } from "sonner";
+import type { ChangelogResult } from "@/lib/changelog/types";
+import {
+  renderKeepAChangelog,
+  renderMarkdown,
+  renderPlainText,
+} from "@/lib/changelog/render";
+import { Panel, PanelHeader } from "@/components/portal/panel";
+import { cn } from "@/lib/utils";
+
+type Format = "conventional" | "keepachangelog" | "plain" | "json";
+
+const FORMATS: { id: Format; label: string; ext: string; lang: string }[] = [
+  { id: "conventional", label: "Markdown", ext: "md", lang: "markdown" },
+  { id: "keepachangelog", label: "Keep a Changelog", ext: "md", lang: "markdown" },
+  { id: "plain", label: "Plain text", ext: "txt", lang: "text" },
+  { id: "json", label: "JSON", ext: "json", lang: "json" },
+];
+
+export function ExportTab({ result }: { result: ChangelogResult }) {
+  const [format, setFormat] = useState<Format>("conventional");
+  const [copied, setCopied] = useState(false);
+  const copyTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (copyTimer.current) clearTimeout(copyTimer.current);
+    };
+  }, []);
+
+  const content = useMemo(() => {
+    const args = {
+      owner: result.owner,
+      name: result.name,
+      base: result.base,
+      head: result.head,
+      groups: result.groups,
+    };
+    switch (format) {
+      case "conventional":
+        return renderMarkdown({ ...args, rangeMode: result.rangeMode });
+      case "keepachangelog":
+        return renderKeepAChangelog(args);
+      case "plain":
+        return renderPlainText(args);
+      case "json":
+        return JSON.stringify(result, null, 2);
+    }
+  }, [format, result]);
+
+  const permalink = useMemo(() => {
+    if (typeof window === "undefined") return "";
+    const p = new URLSearchParams({ repo: result.repo });
+    if (result.base) p.set("base", result.base);
+    if (result.head) p.set("head", result.head);
+    return `${window.location.origin}/?${p}`;
+  }, [result]);
+
+  const apiUrl = useMemo(() => {
+    const p = new URLSearchParams({ repo: result.repo, format });
+    if (result.base) p.set("base", result.base);
+    if (result.head) p.set("head", result.head);
+    return `/api/changelog?${p}`;
+  }, [result, format]);
+
+  async function copy(text: string, msg: string): Promise<boolean> {
+    try {
+      await navigator.clipboard.writeText(text);
+      toast.success(msg);
+      return true;
+    } catch {
+      toast.error("Clipboard was blocked by your browser");
+      return false;
+    }
+  }
+
+  function download() {
+    const meta = FORMATS.find((f) => f.id === format)!;
+    const blob = new Blob([content], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download =
+      format === "json" ? "changeloom.json" : `CHANGELOG.${meta.ext}`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success("Downloaded");
+  }
+
+  return (
+    <div className="space-y-5">
+      <Panel>
+        <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="inline-flex flex-wrap rounded-lg border bg-panel p-0.5 text-xs font-medium">
+            {FORMATS.map((f) => (
+              <button
+                key={f.id}
+                onClick={() => setFormat(f.id)}
+                aria-pressed={format === f.id}
+                className={cn(
+                  "rounded-md px-3 py-1.5 transition-colors",
+                  format === f.id
+                    ? "bg-primary/15 text-primary"
+                    : "text-muted-foreground hover:text-foreground",
+                )}
+              >
+                {f.label}
+              </button>
+            ))}
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={download}
+              className="inline-flex h-9 items-center gap-1.5 rounded-lg border bg-panel px-3 text-sm text-muted-foreground transition-colors hover:text-foreground"
+            >
+              <Download className="size-4" /> Download
+            </button>
+            <button
+              onClick={async () => {
+                const ok = await copy(content, "Copied to clipboard");
+                if (!ok) return;
+                setCopied(true);
+                if (copyTimer.current) clearTimeout(copyTimer.current);
+                copyTimer.current = setTimeout(() => setCopied(false), 1600);
+              }}
+              className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-primary px-3 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90"
+            >
+              {copied ? <Check className="size-4" /> : <Copy className="size-4" />}
+              {copied ? "Copied" : "Copy"}
+            </button>
+          </div>
+        </div>
+        <pre className="max-h-[26rem] overflow-auto rounded-lg border bg-background/60 p-4 font-mono text-xs leading-relaxed text-foreground/80">
+          {content}
+        </pre>
+      </Panel>
+
+      <div className="grid gap-5 md:grid-cols-2">
+        <Panel>
+          <PanelHeader icon={Link2} title="Shareable link" />
+          <p className="mb-3 text-sm text-muted-foreground">
+            Anyone opening this link gets the same repo and range, ready-woven.
+          </p>
+          <div className="flex items-center gap-2">
+            <code className="min-w-0 flex-1 truncate rounded-lg border bg-background/60 px-3 py-2 font-mono text-xs text-foreground/80">
+              {permalink}
+            </code>
+            <button
+              onClick={() => copy(permalink, "Link copied")}
+              aria-label="Copy link"
+              className="inline-flex size-9 shrink-0 items-center justify-center rounded-lg border bg-panel text-muted-foreground transition-colors hover:text-foreground"
+            >
+              <Copy className="size-4" />
+            </button>
+          </div>
+        </Panel>
+
+        <Panel>
+          <PanelHeader icon={Terminal} title="CI recipe" hint="callable API" />
+          <p className="mb-3 text-sm text-muted-foreground">
+            Fetch this changelog from your release pipeline.
+          </p>
+          <div className="flex items-start gap-2">
+            <code className="min-w-0 flex-1 overflow-x-auto whitespace-pre rounded-lg border bg-background/60 px-3 py-2 font-mono text-xs text-foreground/80">
+              {`curl "${typeof window !== "undefined" ? window.location.origin : ""}${apiUrl}"`}
+            </code>
+            <button
+              onClick={() =>
+                copy(
+                  `curl "${window.location.origin}${apiUrl}"`,
+                  "Command copied",
+                )
+              }
+              aria-label="Copy command"
+              className="inline-flex size-9 shrink-0 items-center justify-center rounded-lg border bg-panel text-muted-foreground transition-colors hover:text-foreground"
+            >
+              <Copy className="size-4" />
+            </button>
+          </div>
+        </Panel>
+      </div>
+    </div>
+  );
+}
