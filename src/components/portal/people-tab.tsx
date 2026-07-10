@@ -1,7 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { FolderGit2, Users } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { FolderGit2, Heart, Sparkles, UserPlus, Users } from "lucide-react";
+import { toast } from "sonner";
 import type { ChangelogResult } from "@/lib/changelog/types";
 import { CATEGORY_MAP, type CategoryKey } from "@/lib/changelog/categories";
 import { ContributorWarp } from "@/components/loom/contributor-warp";
@@ -9,9 +10,40 @@ import { Panel, PanelHeader } from "@/components/portal/panel";
 
 const INITIAL = 15;
 
-export function PeopleTab({ result }: { result: ChangelogResult }) {
+export function PeopleTab({
+  result,
+  token,
+}: {
+  result: ChangelogResult;
+  token: string;
+}) {
   const [expanded, setExpanded] = useState(false);
+  const [firstTimers, setFirstTimers] = useState<Set<string>>(new Set());
   const contributors = result.contributors;
+
+  // First-time contributors: their all-time commit count ≈ their count in this
+  // range → they have no history before it. Lazy, best-effort.
+  useEffect(() => {
+    const controller = new AbortController();
+    const params = new URLSearchParams({ repo: result.repo });
+    if (token) params.set("token", token);
+    fetch(`/api/insights?${params}`, { signal: controller.signal })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        const all: { login: string; contributions: number }[] =
+          data?.allTimeContributors ?? [];
+        if (all.length === 0) return;
+        const allTime = new Map(all.map((c) => [c.login, c.contributions]));
+        const timers = new Set<string>();
+        for (const c of result.contributors) {
+          const total = allTime.get(c.login);
+          if (total != null && total <= c.commits) timers.add(c.login);
+        }
+        setFirstTimers(timers);
+      })
+      .catch(() => {});
+    return () => controller.abort();
+  }, [result.repo, result.contributors, token]);
 
   // What each author actually built, by category — "who did what".
   const authorMix = useMemo(() => {
@@ -88,6 +120,26 @@ export function PeopleTab({ result }: { result: ChangelogResult }) {
           <span className="text-muted-foreground">
             top 3 · <span className="font-mono text-foreground">{top3Share}%</span> of commits
           </span>
+          {firstTimers.size > 0 && (
+            <span className="inline-flex items-center gap-1 text-cat-feature">
+              <UserPlus className="size-3.5" /> {firstTimers.size} first-timer
+              {firstTimers.size > 1 ? "s" : ""}
+            </span>
+          )}
+          <button
+            onClick={() => {
+              const names = contributors.map((c) => `@${c.login}`).join(", ");
+              const co = result.coAuthors.map((c) => c.name).join(", ");
+              const block = `Thanks to ${names}${co ? ` and co-authors ${co}` : ""} for shipping ${result.base ?? ""}…${result.head ?? ""}! 🧵`;
+              navigator.clipboard
+                ?.writeText(block)
+                .then(() => toast.success("Credits copied — go say thanks"))
+                .catch(() => toast.error("Clipboard blocked"));
+            }}
+            className="inline-flex items-center gap-1.5 rounded-full border border-border/70 px-2.5 py-1 text-xs text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground"
+          >
+            <Heart className="size-3" /> Thank them
+          </button>
         </div>
         {result.truncated && (
           <p className="mt-3 font-mono text-[11px] text-muted-foreground/70">
@@ -125,9 +177,17 @@ export function PeopleTab({ result }: { result: ChangelogResult }) {
                   href={`https://github.com/${c.login}`}
                   target="_blank"
                   rel="noreferrer"
-                  className="min-w-0 flex-1 truncate font-mono text-sm text-foreground/90 hover:text-primary"
+                  className="flex min-w-0 flex-1 items-center gap-1.5 truncate font-mono text-sm text-foreground/90 hover:text-primary"
                 >
                   {c.login}
+                  {firstTimers.has(c.login) && (
+                    <span
+                      title="First-time contributor"
+                      className="inline-flex items-center gap-0.5 rounded-full bg-cat-feature/15 px-1.5 py-0.5 text-[10px] font-medium text-cat-feature"
+                    >
+                      <UserPlus className="size-2.5" /> new
+                    </span>
+                  )}
                 </a>
                 <ContributionMix mix={authorMix.get(c.login)} />
                 <span className="w-16 shrink-0 text-right font-mono text-xs tabular-nums text-muted-foreground">
@@ -186,6 +246,30 @@ export function PeopleTab({ result }: { result: ChangelogResult }) {
           </ul>
           <p className="mt-3 text-xs text-muted-foreground">
             The dominant author per area — useful for reviews and bus-factor.
+          </p>
+        </Panel>
+      )}
+
+      {result.coAuthors.length > 0 && (
+        <Panel>
+          <PanelHeader icon={Sparkles} title="Co-authors" hint="Co-authored-by trailers" />
+          <div className="flex flex-wrap gap-2">
+            {result.coAuthors.map((c) => (
+              <span
+                key={c.name}
+                className="inline-flex items-center gap-1.5 rounded-full border border-border/70 bg-secondary/40 px-2.5 py-1 text-xs"
+              >
+                <span className="text-foreground/90">{c.name}</span>
+                {c.commits > 1 && (
+                  <span className="font-mono tabular-nums text-muted-foreground">
+                    {c.commits}
+                  </span>
+                )}
+              </span>
+            ))}
+          </div>
+          <p className="mt-3 text-xs text-muted-foreground">
+            Credited via commit trailers — easy to miss on GitHub&apos;s own view.
           </p>
         </Panel>
       )}

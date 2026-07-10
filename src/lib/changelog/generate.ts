@@ -149,6 +149,95 @@ function topAreas(entries: ChangelogEntry[], files: string[]): string[] {
     .map(([k]) => k);
 }
 
+const DEP_FILE_RE =
+  /(^|\/)(package\.json|package-lock\.json|yarn\.lock|pnpm-lock\.yaml|Cargo\.(toml|lock)|go\.(mod|sum)|requirements\.txt|Pipfile(\.lock)?|poetry\.lock|Gemfile(\.lock)?|composer\.(json|lock)|go\.work)$/i;
+
+function isDepFile(name: string): boolean {
+  return DEP_FILE_RE.test(name);
+}
+
+/** "Should I upgrade?" — how likely this range breaks you, from safe signals. */
+function computeUpgradeRisk(params: {
+  bump: SemverBump;
+  breaking: number;
+  removedFiles: number;
+  dependencyChanges: number;
+  security: number;
+}): import("./types").UpgradeRisk {
+  const { bump, breaking, removedFiles, dependencyChanges, security } = params;
+  const signals: import("./types").UpgradeSignal[] = [];
+  let score = 0;
+
+  if (breaking > 0) {
+    score += Math.min(45, 25 + breaking * 10);
+    signals.push({
+      label: `${breaking} breaking change${breaking > 1 ? "s" : ""}`,
+      detail: "Explicit BREAKING CHANGE markers in this range.",
+      weight: "high",
+    });
+  }
+  if (bump === "major") {
+    score += 25;
+    signals.push({
+      label: "Major version bump",
+      detail: "Semver signals intentional breaking changes.",
+      weight: "high",
+    });
+  } else if (bump === "minor") {
+    score += 8;
+  }
+  if (removedFiles > 0) {
+    score += Math.min(18, removedFiles * 3);
+    signals.push({
+      label: `${removedFiles} file${removedFiles > 1 ? "s" : ""} removed`,
+      detail: "Deleted files can drop public API surface.",
+      weight: "medium",
+    });
+  }
+  if (dependencyChanges > 0) {
+    score += Math.min(12, dependencyChanges * 3);
+    signals.push({
+      label: `${dependencyChanges} dependency change${dependencyChanges > 1 ? "s" : ""}`,
+      detail: "Manifest/lockfile edits may shift transitive deps.",
+      weight: "low",
+    });
+  }
+
+  score = Math.min(100, score);
+  const level = score >= 55 ? "high" : score >= 22 ? "moderate" : "low";
+  if (signals.length === 0) {
+    signals.push({
+      label: "No breaking signals detected",
+      detail: "No breaking markers, major bump, or removed files.",
+      weight: "low",
+    });
+  }
+  return {
+    score,
+    level,
+    signals,
+    hasSecurity: security > 0,
+    removedFiles,
+    dependencyChanges,
+  };
+}
+
+const COAUTHOR_RE = /co-authored-by:\s*([^<\n]+?)\s*<[^>]*>/gi;
+
+function parseCoAuthors(messages: string[]): import("./types").CoAuthor[] {
+  const counts = new Map<string, number>();
+  for (const msg of messages) {
+    for (const m of msg.matchAll(COAUTHOR_RE)) {
+      const name = m[1].trim();
+      if (!name || /\[bot\]/i.test(name)) continue;
+      counts.set(name, (counts.get(name) ?? 0) + 1);
+    }
+  }
+  return [...counts.entries()]
+    .map(([name, commits]) => ({ name, commits }))
+    .sort((a, b) => b.commits - a.commits);
+}
+
 function toVitals(
   meta: Awaited<ReturnType<typeof getRepo>> | null,
 ): RepoVitals | null {
@@ -208,6 +297,8 @@ export async function generateChangelog(
   let totalCommits = 0;
   let truncated = false;
   let churn = null;
+  let removedFiles = 0;
+  let dependencyChanges = 0;
 
   const defaultBranch = meta?.default_branch ?? null;
   const canStage = Boolean(staging && tagNames.length >= 1 && defaultBranch);
@@ -228,6 +319,8 @@ export async function generateChangelog(
     rawCommits = cmp.commits.map(toRaw);
     files = (cmp.files ?? []).map((f) => f.filename);
     churn = computeChurn(cmp.files);
+    removedFiles = (cmp.files ?? []).filter((f) => f.status === "removed").length;
+    dependencyChanges = files.filter(isDepFile).length;
   } else if (useOverride || latest) {
     rangeMode = "tags";
     let newer = headOverride ?? latest![0];
@@ -247,6 +340,8 @@ export async function generateChangelog(
     rawCommits = cmp.commits.map(toRaw);
     files = (cmp.files ?? []).map((f) => f.filename);
     churn = computeChurn(cmp.files);
+    removedFiles = (cmp.files ?? []).filter((f) => f.status === "removed").length;
+    dependencyChanges = files.filter(isDepFile).length;
   } else {
     head = meta?.default_branch ?? "HEAD";
     rangeMode = "commits";
@@ -306,6 +401,14 @@ export async function generateChangelog(
   );
 
   const security = entries.filter((e) => e.isSecurity);
+  const coAuthors = parseCoAuthors(rawEntries.map((c) => c.message));
+  const upgradeRisk = computeUpgradeRisk({
+    bump: semverBump(base, head),
+    breaking: (byCategory.get("breaking") ?? []).length,
+    removedFiles,
+    dependencyChanges,
+    security: security.length,
+  });
   const dependencyUpdates = entries.filter((e) => e.isDependency).length;
   const dominant = groups[0]?.category ?? "other";
   const codename = releaseCodename(dominant, head ?? base ?? `${owner}/${name}`);
@@ -329,6 +432,8 @@ export async function generateChangelog(
     loomScore,
     security,
     dependencyUpdates,
+    upgradeRisk,
+    coAuthors,
     staging: isStaging,
     defaultBranch,
     codename,

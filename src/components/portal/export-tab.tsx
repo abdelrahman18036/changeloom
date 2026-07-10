@@ -111,6 +111,24 @@ export function ExportTab({ result }: { result: ChangelogResult }) {
 
   // Pre-composed social share intents.
   const shareText = `What changed in ${result.repo} ${result.base ? `(${result.base}…${result.head})` : ""} — Loom Score ${result.loomScore.grade}`;
+
+  // Platform-flavored release announcements (concise, formatted per platform).
+  function announce(platform: "slack" | "discord" | "markdown"): string {
+    const range = result.base ? `${result.base}…${result.head}` : (result.head ?? "");
+    const bits: string[] = [];
+    const f = result.tldr.byCategory.feature ?? 0;
+    const fx = result.tldr.byCategory.fix ?? 0;
+    if (f) bits.push(`${f} feature${f > 1 ? "s" : ""}`);
+    if (fx) bits.push(`${fx} fix${fx > 1 ? "es" : ""}`);
+    if (result.breaking.length) bits.push(`${result.breaking.length} breaking`);
+    if (result.security.length) bits.push(`${result.security.length} security`);
+    const summary = bits.join(" · ") || `${result.stats.counted} changes`;
+    if (platform === "slack")
+      return `*${result.repo}* \`${range}\` — Loom Score ${result.loomScore.grade}\n${summary}\n<${permalink}|View the full changelog>`;
+    if (platform === "discord")
+      return `**${result.repo}** \`${range}\` — Loom ${result.loomScore.grade}\n${summary}\n[Full changelog](${permalink})`;
+    return `**${result.repo}** (${range}) — Loom Score ${result.loomScore.grade}\n${summary}\n${permalink}`;
+  }
   const shares = [
     { label: "X", href: `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(permalink)}` },
     { label: "Bluesky", href: `https://bsky.app/intent/compose?text=${encodeURIComponent(`${shareText} ${permalink}`)}` },
@@ -228,12 +246,18 @@ export function ExportTab({ result }: { result: ChangelogResult }) {
                 {s.label}
               </a>
             ))}
-            <button
-              onClick={() => copy(`*${result.repo}* changelog — Loom Score ${result.loomScore.grade}\n${permalink}`, "Slack snippet copied")}
-              className="rounded-lg border bg-panel px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground"
-            >
-              Copy for Slack
-            </button>
+          </div>
+          <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-border/60 pt-3">
+            <span className="text-xs text-muted-foreground">Copy for</span>
+            {(["slack", "discord", "markdown"] as const).map((p) => (
+              <button
+                key={p}
+                onClick={() => copy(announce(p), `${p[0].toUpperCase() + p.slice(1)} announcement copied`)}
+                className="rounded-lg border bg-panel px-3 py-1.5 text-xs capitalize text-muted-foreground transition-colors hover:text-foreground"
+              >
+                {p}
+              </button>
+            ))}
           </div>
         </Panel>
       </div>

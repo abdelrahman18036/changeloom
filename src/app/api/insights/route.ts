@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
 import { parseRepoUrl } from "@/lib/changelog/categorize";
-import { GitHubError, listReleases } from "@/lib/changelog/github";
+import {
+  GitHubError,
+  listContributors,
+  listReleases,
+} from "@/lib/changelog/github";
 import { computeCadence } from "@/lib/changelog/insights";
 
 export const runtime = "nodejs";
@@ -32,10 +36,19 @@ export async function GET(request: Request) {
     searchParams.get("token")?.trim() || process.env.GITHUB_TOKEN || undefined;
 
   try {
-    const releases = await listReleases(parsed.owner, parsed.name, token);
+    // Releases (cadence) + all-time contributors (first-timer detection),
+    // fetched in parallel. Contributors are best-effort.
+    const [releases, contributors] = await Promise.all([
+      listReleases(parsed.owner, parsed.name, token),
+      listContributors(parsed.owner, parsed.name, token).catch(() => []),
+    ]);
     const cadence = computeCadence(releases);
+    const allTimeContributors = contributors.map((c) => ({
+      login: c.login,
+      contributions: c.contributions,
+    }));
     return NextResponse.json(
-      { cadence, releaseCount: releases.length },
+      { cadence, releaseCount: releases.length, allTimeContributors },
       { headers: { "Cache-Control": "no-store" } },
     );
   } catch (err) {

@@ -19,7 +19,11 @@ import {
   CATEGORY_MAP,
   type CategoryKey,
 } from "@/lib/changelog/categories";
-import type { ChangelogEntry, ChangelogResult } from "@/lib/changelog/types";
+import type {
+  ChangelogEntry,
+  ChangelogResult,
+  UpgradeRisk,
+} from "@/lib/changelog/types";
 import { SelvedgeTick } from "@/components/loom/selvedge-tick";
 import { cn } from "@/lib/utils";
 
@@ -87,6 +91,44 @@ export function ChangelogTab({ result }: { result: ChangelogResult }) {
 
   useEffect(() => setPage(0), [q, audience, cats, author, hideDeps, groupBy]);
 
+  // Read filter state from the URL once, so a shared link restores the view.
+  useEffect(() => {
+    const p = new URLSearchParams(window.location.search);
+    const q0 = p.get("q");
+    if (q0) setQ(q0);
+    const aud = p.get("aud");
+    if (aud === "ship" || aud === "plumbing") setAudience(aud);
+    const grp = p.get("grp");
+    if (grp === "area" || grp === "author") setGroupBy(grp);
+    const au = p.get("au");
+    if (au) setAuthor(au);
+    const cat = p.get("cat");
+    if (cat) {
+      setCats(
+        new Set(cat.split(",").filter((k): k is CategoryKey => k in CATEGORY_MAP)),
+      );
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Mirror filter state back into the URL (preserving repo/base/head params).
+  useEffect(() => {
+    const p = new URLSearchParams(window.location.search);
+    const setOrDel = (k: string, v: string | null) =>
+      v ? p.set(k, v) : p.delete(k);
+    setOrDel("q", q.trim() || null);
+    setOrDel("aud", audience !== "all" ? audience : null);
+    setOrDel("grp", groupBy !== "default" ? groupBy : null);
+    setOrDel("au", author || null);
+    setOrDel("cat", cats.size ? [...cats].join(",") : null);
+    const qs = p.toString();
+    window.history.replaceState(
+      null,
+      "",
+      `${window.location.pathname}${qs ? `?${qs}` : ""}`,
+    );
+  }, [q, audience, groupBy, author, cats]);
+
   // Keyboard: `/` focus search, `[` `]` paginate.
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -141,6 +183,8 @@ export function ChangelogTab({ result }: { result: ChangelogResult }) {
       )}
 
       <TldrStrip result={result} />
+
+      <UpgradePanel risk={result.upgradeRisk} />
 
       {result.security.length > 0 && (
         <SecurityCallout entries={result.security} repo={result.repo} />
@@ -492,6 +536,76 @@ function BreakingCallout({
           </li>
         ))}
       </ul>
+    </div>
+  );
+}
+
+const RISK_META = {
+  low: { color: "var(--cat-feature)", label: "Low risk", verdict: "Safe to upgrade" },
+  moderate: { color: "var(--cat-fix)", label: "Moderate risk", verdict: "Review before upgrading" },
+  high: { color: "var(--cat-breaking)", label: "High risk", verdict: "Upgrade carefully" },
+} as const;
+
+function UpgradePanel({ risk }: { risk: UpgradeRisk }) {
+  const meta = RISK_META[risk.level];
+  return (
+    <div className="rounded-xl border bg-panel p-4">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+        {/* verdict dial */}
+        <div className="flex items-center gap-3.5">
+          <div className="relative grid size-14 shrink-0 place-items-center">
+            <svg viewBox="0 0 44 44" className="size-14 -rotate-90">
+              <circle cx="22" cy="22" r="18" fill="none" stroke="var(--secondary)" strokeWidth="4" />
+              <circle
+                cx="22"
+                cy="22"
+                r="18"
+                fill="none"
+                stroke={meta.color}
+                strokeWidth="4"
+                strokeLinecap="round"
+                strokeDasharray={`${(risk.score / 100) * 113} 113`}
+              />
+            </svg>
+            <span className="absolute font-mono text-sm font-bold" style={{ color: meta.color }}>
+              {risk.score}
+            </span>
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-semibold" style={{ color: meta.color }}>
+                {meta.verdict}
+              </span>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Upgrade risk · {meta.label}
+              {risk.hasSecurity && (
+                <span className="ml-1.5 font-medium text-cat-fix">· security fix — upgrade soon</span>
+              )}
+            </p>
+          </div>
+        </div>
+
+        {/* signals */}
+        <div className="flex min-w-0 flex-1 flex-wrap gap-1.5 sm:justify-end">
+          {risk.signals.map((s, i) => (
+            <span
+              key={i}
+              title={s.detail}
+              className={cn(
+                "inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs",
+                s.weight === "high"
+                  ? "bg-cat-breaking/12 text-cat-breaking"
+                  : s.weight === "medium"
+                    ? "bg-cat-fix/12 text-cat-fix"
+                    : "bg-secondary text-muted-foreground",
+              )}
+            >
+              {s.label}
+            </span>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }
