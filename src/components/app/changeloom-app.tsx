@@ -49,7 +49,12 @@ export function ChangeloomApp({
   const run = useCallback(
     async (
       url: string,
-      opts: { base?: string; head?: string; inPortal?: boolean } = {},
+      opts: {
+        base?: string;
+        head?: string;
+        inPortal?: boolean;
+        staging?: boolean;
+      } = {},
     ) => {
       const value = url.trim();
       if (!value) return;
@@ -67,6 +72,7 @@ export function ChangeloomApp({
             token: token || undefined,
             base: opts.base,
             head: opts.head,
+            staging: opts.staging,
           }),
         });
         const data = await res.json();
@@ -131,6 +137,7 @@ export function ChangeloomApp({
             onCompare={(base, head) =>
               run(result.repo, { base, head, inPortal: true })
             }
+            onStaging={() => run(result.repo, { staging: true, inPortal: true })}
             onReset={reset}
           />
         </motion.div>

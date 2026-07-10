@@ -27,6 +27,10 @@ export interface ChangelogEntry {
   avatarUrl: string | null;
   /** First line of a BREAKING CHANGE footer, when present. */
   breakingNote: string | null;
+  /** Flagged as a security fix (CVE / vuln / security keywords). */
+  isSecurity: boolean;
+  /** Flagged as a dependency bump (bot author or bump pattern). */
+  isDependency: boolean;
 }
 
 export interface ChangelogGroup {
@@ -107,6 +111,16 @@ export interface ChangelogResult {
   distribution: CategorySlice[];
   tldr: Tldr;
   loomScore: LoomScore;
+  /** Security fixes surfaced from the range (CVE / vuln keywords). */
+  security: ChangelogEntry[];
+  /** Count of dependency-bump entries in the range. */
+  dependencyUpdates: number;
+  /** True when head is a branch (unreleased preview), not a tag. */
+  staging: boolean;
+  /** Repo default branch, for the "Unreleased" staging button. */
+  defaultBranch: string | null;
+  /** A deterministic, fun codename for this release. */
+  codename: string;
   /** True when the range exceeded GitHub's compare cap (250 commits). */
   truncated: boolean;
   stats: {

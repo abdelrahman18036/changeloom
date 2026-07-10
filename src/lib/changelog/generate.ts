@@ -1,5 +1,10 @@
 import { CATEGORIES, type CategoryKey } from "./categories";
-import { categorizeCommit, isNoise, parseRepoUrl } from "./categorize";
+import {
+  categorizeCommit,
+  isNoise,
+  parseRepoUrl,
+  releaseCodename,
+} from "./categorize";
 import {
   compareRefs,
   getRepo,
@@ -165,9 +170,14 @@ function toVitals(
 
 export async function generateChangelog(
   url: string,
-  options: { token?: string; base?: string; head?: string } = {},
+  options: {
+    token?: string;
+    base?: string;
+    head?: string;
+    staging?: boolean;
+  } = {},
 ): Promise<ChangelogResult> {
-  const { token, base: baseOverride, head: headOverride } = options;
+  const { token, base: baseOverride, head: headOverride, staging } = options;
   const parsed = parseRepoUrl(url);
   if (!parsed) {
     throw new GitHubError(
@@ -198,10 +208,26 @@ export async function generateChangelog(
   let truncated = false;
   let churn = null;
 
-  const useOverride = Boolean(baseOverride && headOverride);
-  const latest = !useOverride && tags.length >= 2 ? pickLatestTags(tags) : null;
+  const defaultBranch = meta?.default_branch ?? null;
+  const canStage = Boolean(staging && tagNames.length >= 1 && defaultBranch);
+  const useOverride = !canStage && Boolean(baseOverride && headOverride);
+  const latest =
+    !canStage && !useOverride && tags.length >= 2 ? pickLatestTags(tags) : null;
+  let isStaging = false;
 
-  if (useOverride || latest) {
+  if (canStage) {
+    // The Staging Dock: everything on the default branch not yet released.
+    rangeMode = "tags";
+    isStaging = true;
+    base = tagNames[0];
+    head = defaultBranch!;
+    const cmp = await compareRefs(owner, name, base, head, token);
+    totalCommits = cmp.total_commits;
+    truncated = cmp.total_commits > cmp.commits.length;
+    rawCommits = cmp.commits.map(toRaw);
+    files = (cmp.files ?? []).map((f) => f.filename);
+    churn = computeChurn(cmp.files);
+  } else if (useOverride || latest) {
     rangeMode = "tags";
     let newer = headOverride ?? latest![0];
     let older = baseOverride ?? latest![1];
@@ -236,7 +262,9 @@ export async function generateChangelog(
     throw new GitHubError(
       404,
       "no_commits",
-      "No changelog-worthy commits found in this range.",
+      isStaging
+        ? "Nothing unreleased — the latest tag is up to date with the default branch. 🎉"
+        : "No changelog-worthy commits found in this range.",
     );
   }
 
@@ -276,6 +304,11 @@ export async function generateChangelog(
     rawEntries.map((c) => c.message.split("\n")[0].trim()),
   );
 
+  const security = entries.filter((e) => e.isSecurity);
+  const dependencyUpdates = entries.filter((e) => e.isDependency).length;
+  const dominant = groups[0]?.category ?? "other";
+  const codename = releaseCodename(dominant, head ?? base ?? `${owner}/${name}`);
+
   return {
     repo: `${owner}/${name}`,
     owner,
@@ -293,6 +326,11 @@ export async function generateChangelog(
     distribution,
     truncated,
     loomScore,
+    security,
+    dependencyUpdates,
+    staging: isStaging,
+    defaultBranch,
+    codename,
     tldr: {
       commits: totalCommits,
       entries: entries.length,

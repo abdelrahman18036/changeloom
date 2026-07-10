@@ -55,10 +55,26 @@ portal with five views:
   [![changelog](https://changeloom.dev/api/badge/owner/repo)](https://changeloom.dev/owner/repo)
   ```
 
+- **Staging Dock** — one click to preview *everything unreleased* on the default
+  branch since the latest tag (GitHub's biggest blind spot), fully categorized.
+- **Security spotlight** — CVE / vuln / advisory keywords are detected and
+  surfaced in a "patch soon" callout; dependency bumps are counted and rolled up.
+- **Release codename** — a deterministic, fun name for every range.
+- **Atom feed** (`/api/feed/owner/repo`) and **llms.txt** (`/api/llms/owner/repo`)
+  — a subscribe-anywhere feed and a token-efficient, machine-readable changelog
+  for AI coding agents.
+- **Social OG cards** — every permalink unfurls into a branded image
+  (`/api/og/owner/repo`).
+- **One-click GitHub Release drafter** and **pre-composed share intents**
+  (X / Bluesky / LinkedIn / Reddit / HN / Slack).
+
 Everything runs on the **rule-based engine** — no AI required. The baseline is
 fully deterministic and offline-safe, and a keyword heuristic layer
 categorizes non-conventional commits ("fix crash on start", "add dark mode")
 so real-world history doesn't collapse into "Other".
+
+See **[ROADMAP.md](ROADMAP.md)** for the full 194-idea feature catalog (from a
+19-agent brainstorm) — top-leverage builds, quick wins, and moonshots.
 
 ## Tech stack
 
@@ -96,6 +112,9 @@ The portal is backed by three endpoints:
 | `GET /api/changelog?repo=o/r&format=md\|keepachangelog\|plain\|json` | Callable export for CI pipelines |
 | `GET /api/insights?repo=o/r` | Release cadence / velocity (lazy) |
 | `GET /api/badge/owner/repo` | Embeddable SVG badge with the repo's Loom Score |
+| `GET /api/feed/owner/repo` | Atom feed of the repo's releases |
+| `GET /api/llms/owner/repo` | Machine-readable changelog (llms.txt) for AI agents |
+| `GET /api/og/owner/repo` | Dynamic 1200×630 social share card |
 
 ```bash
 curl "https://changeloom.dev/api/changelog?repo=honojs/hono&format=md"
