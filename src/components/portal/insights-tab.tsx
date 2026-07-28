@@ -79,9 +79,9 @@ export function InsightsTab({
     : null;
 
   return (
-    <div className="grid gap-5 lg:grid-cols-2">
+    <div className="grid gap-5 lg:grid-cols-2 2xl:grid-cols-3">
       {/* Loom Score — changelog hygiene grade */}
-      <Panel className="lg:col-span-2">
+      <Panel className="lg:col-span-2 2xl:col-span-3">
         <PanelHeader
           icon={Gauge}
           title="Loom Score"
@@ -91,13 +91,13 @@ export function InsightsTab({
       </Panel>
 
       {/* Project pulse */}
-      <Panel className="lg:col-span-2">
+      <Panel className="lg:col-span-2 2xl:col-span-3">
         <PanelHeader icon={HeartPulse} title="Project pulse" hint="health signals" />
         <PulseRow result={result} cadence={cadence} loading={loading} />
       </Panel>
 
       {/* Ship Rhythm */}
-      <Panel className="lg:col-span-2">
+      <Panel className="lg:col-span-2 2xl:col-span-3">
         <PanelHeader icon={Activity} title="Ship rhythm" hint="from releases" />
         <div aria-live="polite" aria-busy={loading}>
         {loading ? (

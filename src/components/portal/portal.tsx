@@ -129,7 +129,7 @@ export function Portal({
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
-      className="mx-auto max-w-5xl px-5 py-8"
+      className="mx-auto w-full max-w-[1600px] px-5 py-8 sm:px-8"
     >
       {/* Header */}
       <div className="flex flex-col gap-4 border-b border-border/60 pb-5 lg:flex-row lg:items-start lg:justify-between">

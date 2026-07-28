@@ -3,7 +3,7 @@ import { GithubIcon, Wordmark } from "@/components/logo";
 export function SiteHeader() {
   return (
     <header className="sticky top-0 z-40 w-full border-b border-border/60 bg-background/70 backdrop-blur-md">
-      <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-5">
+      <div className="mx-auto flex h-14 w-full max-w-[1600px] items-center justify-between px-5 sm:px-8">
         <a href="/" className="transition-opacity hover:opacity-80">
           <Wordmark />
         </a>

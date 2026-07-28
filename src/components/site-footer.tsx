@@ -3,7 +3,7 @@ import { GithubIcon, LoomMark } from "@/components/logo";
 export function SiteFooter() {
   return (
     <footer className="mt-auto border-t border-border/60">
-      <div className="mx-auto flex max-w-5xl flex-col items-center justify-between gap-4 px-5 py-8 sm:flex-row">
+      <div className="mx-auto flex w-full max-w-[1600px] flex-col items-center justify-between gap-4 px-5 py-8 sm:flex-row sm:px-8">
         <div className="flex flex-col items-center gap-1 text-sm text-muted-foreground sm:items-start">
           <div className="flex items-center gap-2.5">
             <LoomMark className="size-5 text-muted-foreground" />
