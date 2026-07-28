@@ -182,9 +182,11 @@ export function ChangelogTab({ result }: { result: ChangelogResult }) {
         </div>
       )}
 
-      <TldrStrip result={result} />
-
-      <UpgradePanel risk={result.upgradeRisk} />
+      {/* Summary rail: side-by-side once there's room */}
+      <div className="grid gap-4 xl:grid-cols-2">
+        <TldrStrip result={result} />
+        <UpgradePanel risk={result.upgradeRisk} />
+      </div>
 
       {result.security.length > 0 && (
         <SecurityCallout entries={result.security} repo={result.repo} />

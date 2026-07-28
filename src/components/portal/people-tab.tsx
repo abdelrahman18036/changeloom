@@ -148,6 +148,7 @@ export function PeopleTab({
         )}
       </Panel>
 
+      <div className="grid gap-5 xl:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)] xl:items-start">
       <div className="overflow-hidden rounded-xl border bg-panel">
         <ol>
           {shown.map((c, i) => {
@@ -210,11 +211,7 @@ export function PeopleTab({
         )}
       </div>
 
-      <p className="px-1 text-xs text-muted-foreground">
-        Each bar shows <span className="text-foreground/80">what that person built</span>,
-        by category — not just how much.
-      </p>
-
+      <div className="space-y-5">
       {areaOwners.length > 0 && (
         <Panel>
           <PanelHeader icon={FolderGit2} title="Area ownership" hint="by scope" />
@@ -273,6 +270,14 @@ export function PeopleTab({
           </p>
         </Panel>
       )}
+
+      <p className="px-1 text-xs text-muted-foreground">
+        Each bar shows{" "}
+        <span className="text-foreground/80">what that person built</span>, by
+        category — not just how much.
+      </p>
+      </div>
+      </div>
     </div>
   );
 }

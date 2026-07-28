@@ -217,7 +217,7 @@ export function ExportTab({ result }: { result: ChangelogResult }) {
       </Panel>
 
       {/* Publish & share */}
-      <div className="grid gap-5 md:grid-cols-2">
+      <div className="grid gap-5 md:grid-cols-2 2xl:grid-cols-4">
         <Panel>
           <PanelHeader icon={Rocket} title="Publish" hint="one click to GitHub" />
           <p className="mb-3 text-sm text-muted-foreground">
@@ -336,7 +336,7 @@ export function ExportTab({ result }: { result: ChangelogResult }) {
         </div>
       </Panel>
 
-      <div className="grid gap-5 md:grid-cols-2">
+      <div className="grid gap-5 md:grid-cols-2 2xl:grid-cols-4">
         <Panel>
           <PanelHeader icon={Link2} title="Shareable link" />
           <p className="mb-3 text-sm text-muted-foreground">

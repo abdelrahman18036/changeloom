@@ -124,7 +124,7 @@ export function Hero({
         variants={stage}
         initial="hidden"
         animate="show"
-        className="mx-auto flex max-w-4xl flex-col items-center px-5 pb-14 pt-20 text-center sm:pt-28"
+        className="mx-auto flex max-w-5xl flex-col items-center px-5 pb-14 pt-20 text-center sm:px-8 sm:pt-28"
       >
         {/* Overline */}
         <motion.div
@@ -367,7 +367,7 @@ export function Hero({
         </motion.form>
 
         {/* The living, self-playing showcase */}
-        <motion.div variants={rise} className="mt-14 w-full max-w-2xl">
+        <motion.div variants={rise} className="mt-14 w-full max-w-3xl">
           <HeroShowcase />
         </motion.div>
 
