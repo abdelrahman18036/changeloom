@@ -34,13 +34,14 @@ function badgeSvg(right: string, rightColor: string): string {
     <rect x="${leftW}" width="${rightW}" height="${H}" fill="#0d1117"/>
     <rect x="${leftW}" width="1" height="${H}" fill="#2a3140"/>
   </g>
-  <!-- mini weave glyph -->
+  <!-- mini mark: changelog bars with a cobalt thread woven through -->
   <g transform="translate(6,4)">
-    <line x1="3" y1="1" x2="3" y2="13" stroke="#8b95a8" stroke-width="1.1" opacity="0.55"/>
-    <line x1="7.5" y1="1" x2="7.5" y2="13" stroke="#8b95a8" stroke-width="1.1" opacity="0.55"/>
-    <line x1="12" y1="1" x2="12" y2="13" stroke="#8b95a8" stroke-width="1.1" opacity="0.55"/>
-    <path d="M0.5 4.5 C3 4.5 3 4.5 5 4.5 S7.5 8 9.5 8 S12 4.5 14.5 4.5" fill="none" stroke="#6ea0ff" stroke-width="1.6" stroke-linecap="round"/>
-    <path d="M0.5 10.5 C3 10.5 3 10.5 5 10.5 S7.5 8 9.5 8 S12 10.5 14.5 10.5" fill="none" stroke="#6ea0ff" stroke-width="1.6" stroke-linecap="round" opacity="0.6"/>
+    <g fill="#c9d3e2">
+      <rect x="0.5" y="1.8" width="13" height="2.2" rx="1.1"/>
+      <rect x="0.5" y="9.8" width="11" height="2.2" rx="1.1"/>
+    </g>
+    <path d="M2.6 12.4 L 11.4 1.6" fill="none" stroke="#6ea0ff" stroke-width="2" stroke-linecap="round"/>
+    <rect x="0.5" y="5.8" width="9" height="2.2" rx="1.1" fill="#c9d3e2"/>
   </g>
   <g fill="#e6edf3" text-anchor="start" font-family="Verdana,DejaVu Sans,sans-serif" font-size="11">
     <text x="${glyph + 2}" y="15">${label}</text>

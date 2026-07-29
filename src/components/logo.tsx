@@ -1,11 +1,14 @@
 import { cn } from "@/lib/utils";
 
 /**
- * Changeloom mark — a woven tile with TRUE over-under interlacing.
+ * Changeloom mark — three changelog entries with a cobalt thread woven
+ * through them. It says both halves of the product at once: the bars are a
+ * changelog, the thread is the loom.
  *
- * Two cobalt weft threads cross three warp threads. Draw order does the
- * weaving: wefts first, warps on top (warp-over everywhere), then short weft
- * segments re-drawn on top at the crossings where the weft binds over.
+ * The interlace is real, done with draw order: bars 1 and 3 go down first so
+ * the thread crosses OVER them, then bar 2 is drawn last so the thread passes
+ * UNDER it. Bold 3.5px bars survive a 16px favicon; the old hairline warp did
+ * not (and read as a "#").
  */
 export function LoomMark({ className }: { className?: string }) {
   return (
@@ -15,57 +18,29 @@ export function LoomMark({ className }: { className?: string }) {
       className={cn("size-6", className)}
       aria-hidden
     >
-      <defs>
-        <linearGradient id="weft" x1="0" y1="0" x2="32" y2="0" gradientUnits="userSpaceOnUse">
-          <stop offset="0" stopColor="var(--primary)" />
-          <stop offset="1" stopColor="var(--thread-signal, var(--primary))" />
-        </linearGradient>
-      </defs>
-
-      {/* tile */}
-      <rect x="1" y="1" width="30" height="30" rx="8.5" fill="var(--card)" stroke="var(--border)" />
-
-      {/* wefts (under layer) */}
-      <path
-        d="M5.5 13 C 8 13, 8 11.5, 10.5 11.5 S 13.5 14.5, 16 14.5 S 19 11.5, 21.5 11.5 S 24 13, 26.5 13"
-        stroke="url(#weft)"
-        strokeWidth="2.4"
-        strokeLinecap="round"
-      />
-      <path
-        d="M5.5 19 C 8 19, 8 20.5, 10.5 20.5 S 13.5 17.5, 16 17.5 S 19 20.5, 21.5 20.5 S 24 19, 26.5 19"
-        stroke="url(#weft)"
-        strokeWidth="2.4"
-        strokeLinecap="round"
-        opacity="0.62"
-      />
-
-      {/* warps (drawn over both wefts) */}
-      <g stroke="currentColor" strokeWidth="2" strokeLinecap="round" opacity="0.5">
-        <line x1="10.5" y1="6" x2="10.5" y2="26" />
-        <line x1="16" y1="6" x2="16" y2="26" />
-        <line x1="21.5" y1="6" x2="21.5" y2="26" />
+      {/* entries the thread binds over */}
+      <g fill="currentColor" opacity="0.92">
+        <rect x="6" y="8.5" width="20" height="3.5" rx="1.75" />
+        <rect x="6" y="20" width="17" height="3.5" rx="1.75" />
       </g>
 
-      {/* weft-over segments: weft A binds over warp 1 & 3, weft B over warp 2 */}
+      {/* the weft — one taut cobalt thread drawn through the stack */}
       <path
-        d="M8.6 11.7 C 9.4 11.5, 9.7 11.5, 10.5 11.5 C 11.3 11.5, 11.8 11.7, 12.4 12.1"
-        stroke="url(#weft)"
-        strokeWidth="2.4"
+        d="M9.5 25.5 L 22.5 6.5"
+        stroke="var(--primary)"
+        strokeWidth="3.2"
         strokeLinecap="round"
       />
-      <path
-        d="M19.6 12.1 C 20.2 11.7, 20.7 11.5, 21.5 11.5 C 22.3 11.5, 22.6 11.6, 23.4 11.8"
-        stroke="url(#weft)"
-        strokeWidth="2.4"
-        strokeLinecap="round"
-      />
-      <path
-        d="M14.1 17.9 C 14.7 17.6, 15.2 17.5, 16 17.5 C 16.8 17.5, 17.3 17.6, 17.9 17.9"
-        stroke="url(#weft)"
-        strokeWidth="2.4"
-        strokeLinecap="round"
-        opacity="0.62"
+
+      {/* the entry the thread passes under — drawn last, so it covers */}
+      <rect
+        x="6"
+        y="14.25"
+        width="14"
+        height="3.5"
+        rx="1.75"
+        fill="currentColor"
+        opacity="0.92"
       />
     </svg>
   );

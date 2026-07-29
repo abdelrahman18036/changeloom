@@ -74,11 +74,10 @@ export async function GET(
         <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
           <div style={{ display: "flex", width: 40, height: 40, borderRadius: 11, background: "#1b2230", alignItems: "center", justifyContent: "center" }}>
             <svg width="30" height="30" viewBox="0 0 32 32">
-              <path d="M5.5 13 C 8 13, 8 11.5, 10.5 11.5 S 13.5 14.5, 16 14.5 S 19 11.5, 21.5 11.5 S 24 13, 26.5 13" stroke={COBALT} strokeWidth="2.4" fill="none" strokeLinecap="round" />
-              <g stroke="#e8ecf4" strokeWidth="2" opacity="0.5" strokeLinecap="round">
-                <line x1="10.5" y1="6" x2="10.5" y2="26" /><line x1="16" y1="6" x2="16" y2="26" /><line x1="21.5" y1="6" x2="21.5" y2="26" />
-              </g>
-              <path d="M5.5 19 C 8 19, 8 20.5, 10.5 20.5 S 13.5 17.5, 16 17.5 S 19 20.5, 21.5 20.5 S 24 19, 26.5 19" stroke={COBALT} strokeWidth="2.4" fill="none" strokeLinecap="round" opacity="0.62" />
+              <rect x="6" y="8.5" width="20" height="3.5" rx="1.75" fill="#e8ecf4" opacity="0.92" />
+              <rect x="6" y="20" width="17" height="3.5" rx="1.75" fill="#e8ecf4" opacity="0.92" />
+              <path d="M9.5 25.5 L 22.5 6.5" stroke={COBALT} strokeWidth="3.2" strokeLinecap="round" fill="none" />
+              <rect x="6" y="14.25" width="14" height="3.5" rx="1.75" fill="#e8ecf4" opacity="0.92" />
             </svg>
           </div>
           <div style={{ fontSize: 24, fontWeight: 600 }}>Changeloom</div>
