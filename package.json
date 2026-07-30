@@ -1,6 +1,6 @@
 {
   "name": "changeloom",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -36,5 +36,21 @@
     "tailwindcss": "^4",
     "typescript": "^5",
     "vitest": "^4.1.10"
-  }
+  },
+  "description": "Paste a GitHub repo URL, get a categorized changelog — plus release insights, contributor intelligence and a Loom Score.",
+  "license": "MIT",
+  "homepage": "https://changeloom.vercel.app",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/abdelrahman18036/changeloom.git"
+  },
+  "keywords": [
+    "changelog",
+    "release-notes",
+    "github",
+    "conventional-commits",
+    "semver",
+    "release-management",
+    "developer-tools"
+  ]
 }

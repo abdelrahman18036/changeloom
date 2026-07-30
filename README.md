@@ -18,6 +18,7 @@ account.
 
 [![changelog](https://changeloom.vercel.app/api/badge/abdelrahman18036/changeloom)](https://changeloom.vercel.app/abdelrahman18036/changeloom)
 [![CI](https://github.com/abdelrahman18036/changeloom/actions/workflows/ci.yml/badge.svg)](https://github.com/abdelrahman18036/changeloom/actions/workflows/ci.yml)
+[![version](https://img.shields.io/badge/version-1.0.0-6ea0ff)](CHANGELOG.md)
 [![License: MIT](https://img.shields.io/badge/license-MIT-6ea0ff)](LICENSE)
 
 <br>
