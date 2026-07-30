@@ -44,11 +44,11 @@ const HEURISTICS: { match: RegExp; category: CategoryKey }[] = [
     category: "test",
   },
   {
-    match: /\b(refactor(s|ed)?|rewrite|rework(ed)?|restructure[sd]?|clean\s?up|simplif(y|ies|ied)|rename[sd]?|reorganiz|extract(ed)?|move[sd]?\b.*\bto\b)\b/i,
+    match: /\b(refactor(s|ed)?|rewrite|rework(ed)?|restructure[sd]?|clean\s?up|simplif(y|ies|ied)|rename[sd]?|reorganiz\w*|extract(ed)?|move[sd]?\b.*\bto\b)\b/i,
     category: "refactor",
   },
   {
-    match: /\b(optimiz|performance|perf\b|faster|speed(s|ed)? up|reduce[sd]? (memory|allocations|bundle))\b/i,
+    match: /\b(optimiz\w*|performance|perf\b|faster|speed(s|ed)? up|reduce[sd]? (memory|allocations|bundle))\b/i,
     category: "perf",
   },
   {
@@ -75,7 +75,7 @@ function heuristicCategory(subject: string): CategoryKey | null {
 }
 
 const SECURITY_RE =
-  /\b(CVE-\d{4}-\d+|GHSA-[\w-]+|security\s+(fix|patch|issue|advisor)|vulnerab|\bvuln\b|\bexploit\b|\bXSS\b|\bCSRF\b|\bSSRF\b|\bRCE\b|injection|sanitiz|auth(entication)?\s+bypass|prototype\s+pollution|ReDoS|arbitrary\s+(code|file))\b/i;
+  /\b(CVE-\d{4}-\d+|GHSA-[\w-]+|security\s+(fix|patch|issue|advisor\w*)|vulnerab\w*|\bvuln\b|\bexploit\w*|\bXSS\b|\bCSRF\b|\bSSRF\b|\bRCE\b|injection|sanitiz\w*|auth(entication)?\s+bypass|prototype\s+pollution|ReDoS|arbitrary\s+(code|file))\b/i;
 
 export function detectSecurity(message: string): boolean {
   return SECURITY_RE.test(message);
@@ -163,7 +163,13 @@ export function isValidRepo(input: string): boolean {
 
 const CONVENTIONAL_RE = /^(\w+)(?:\(([^)]+)\))?(!)?:\s*(.+)$/;
 const PR_RE = /\(#(\d+)\)\s*$/;
-const BREAKING_RE = /BREAKING[ -]CHANGE[s]?:?\s*(.*)/i;
+/**
+ * Conventional Commits defines BREAKING CHANGE as a *footer*: uppercase, at
+ * the start of a line, terminated by a colon. Matching case-insensitively
+ * anywhere in the body flags any commit whose prose merely mentions "breaking
+ * changes", which silently inflates the breaking count and the upgrade risk.
+ */
+const BREAKING_RE = /^BREAKING[ -]CHANGES?: *(.*)$/m;
 const CHANGELOG_SECTION_RE =
   /(?:^|\n)\s*#{0,4}\s*Changelog\s*:?\s*\n+([^\n]+)/i;
 
