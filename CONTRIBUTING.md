@@ -76,3 +76,18 @@ in `src/lib/changelog/categorize.ts`. Add the matching color token to
 
 Open a [Discussion](https://github.com/abdelrahman18036/changeloom/discussions) — no
 question is too small.
+
+## The demo video
+
+`video/` is a separate [Remotion](https://remotion.dev) workspace (its own
+`package.json`, excluded from the app's lint and typecheck). To work on it:
+
+```bash
+cd video
+npm install
+npx remotion studio                 # live preview
+npx remotion render Demo --output=out/changeloom-demo.mp4
+```
+
+Copy the render to `docs/media/` to update the README embed. The composition
+reuses the app's real design tokens from `video/src/theme.ts`.
