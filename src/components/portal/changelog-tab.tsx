@@ -182,8 +182,14 @@ export function ChangelogTab({ result }: { result: ChangelogResult }) {
         </div>
       )}
 
-      {/* Summary rail: side-by-side once there's room */}
-      <div className="grid gap-4 xl:grid-cols-2">
+      {/*
+        Wide screens get a real two-column workspace: the entry list keeps a
+        readable measure on the left while the summary becomes a sticky rail,
+        instead of one column stretched across 2000px of empty space.
+      */}
+      <div className="grid gap-6 2xl:grid-cols-[minmax(0,1fr)_23rem] 2xl:items-start">
+      <aside className="space-y-4 2xl:sticky 2xl:top-6 2xl:order-2">
+      <div className="grid gap-4 sm:grid-cols-2 2xl:grid-cols-1">
         <TldrStrip result={result} />
         <UpgradePanel risk={result.upgradeRisk} />
       </div>
@@ -217,7 +223,10 @@ export function ChangelogTab({ result }: { result: ChangelogResult }) {
       {result.breaking.length > 0 && (
         <BreakingCallout entries={result.breaking} repo={result.repo} />
       )}
+      </aside>
 
+      {/* Main column: the entries themselves */}
+      <div className="min-w-0 space-y-5 2xl:order-1">
       {/* Toolbar */}
       <div className="space-y-3">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -391,6 +400,8 @@ export function ChangelogTab({ result }: { result: ChangelogResult }) {
           </div>
         </div>
       )}
+      </div>
+      </div>
     </div>
   );
 }
