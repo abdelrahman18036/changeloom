@@ -124,6 +124,15 @@ export async function GET(
         </div>
       </div>
     ),
-    { width: 1200, height: 630 },
+    {
+      width: 1200,
+      height: 630,
+      headers: {
+        // Social crawlers re-fetch this on every share. Without a cache it
+        // regenerates a full changelog (3+ GitHub calls) each time and burns
+        // the rate limit; a changelog card is fine to serve slightly stale.
+        "Cache-Control": "public, s-maxage=3600, stale-while-revalidate=86400",
+      },
+    },
   );
 }
